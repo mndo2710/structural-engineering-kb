@@ -1,0 +1,14 @@
+{
+    "PROJECT_DEFAULT_JURISDICTION": "2025_CBC",
+    "DESIGN_METHOD_DEFAULT": "ASD",
+    "ACTIVE_CODES": {
+        "IBC": "v2024",
+        "CBC": "v2025",
+        "ASCE_7": "v7_22",
+        "AISC_360": "v16th_ed",
+        "NDS": "v2024",
+        "SDPWS": "v2021",
+        "ACI_318": "aci_318_19",
+        "TMS_402": "tms_402_22"
+    }
+}

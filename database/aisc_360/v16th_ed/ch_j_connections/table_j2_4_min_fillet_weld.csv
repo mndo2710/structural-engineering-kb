@@ -1,0 +1,5 @@
+Thinner_Part_Thickness_Min_in,Thinner_Part_Thickness_Max_in,Min_Fillet_Weld_Size_in,Min_Fillet_Weld_Fraction
+0.000,0.250,0.125,1/8
+0.250,0.500,0.1875,3/16
+0.500,0.750,0.250,1/4
+0.750,99.00,0.3125,5/16

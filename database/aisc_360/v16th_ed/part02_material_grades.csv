@@ -1,0 +1,6 @@
+ASTM_Spec,Grade,Applicable_Shapes,Fy_ksi,Fu_ksi,E_ksi
+A992,50,W,50,65,29000
+A500,B,HSS_Round,42,58,29000
+A500,C,HSS_Rect;HSS_Sq,50,62,29000
+A36,36,L;Plate;Channel,36,58,29000
+A572,50,Plate;L;Channel,50,65,29000

@@ -1,0 +1,16 @@
+Occupancy_or_Use,Uniform_psf,Conc_lbs,Live_Load_Reduction_Permitted
+"Apartments - Private rooms and corridors serving them",40,,Yes
+"Apartments - Public rooms and corridors serving them",100,,No
+"Attics - Nonhabitable without storage (slope <= 42 deg)",10,,No
+"Attics - Nonhabitable with limited storage",20,,No
+"Attics - Habitable and sleeping areas",30,,Yes
+"Balconies and decks",1.5x_Live_Load_Area_Served,,No
+"Offices - General",50,2000,Yes
+"Offices - First-floor corridors",100,2000,No
+"Offices - Upper-floor corridors",80,2000,Yes
+"Residential - One- and two-family dwellings - Habitable attics and sleeping areas",30,,Yes
+"Residential - All other areas except stairs",40,,Yes
+"Roofs - Flat or pitched (Ordinary)",20,,No
+"Stairs and exitways",100,300,No
+"Storage areas - Light",125,2000,No
+"Storage areas - Heavy",250,3000,No

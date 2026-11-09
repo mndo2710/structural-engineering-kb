@@ -1,0 +1,7 @@
+Load_Duration_Class,Typical_Design_Load,CD_Factor
+Permanent,Dead Load only,0.90
+Ten_Years,Occupancy Live Load,1.00
+Two_Months,Snow Load,1.15
+Seven_Days,Construction / Roof Live Load,1.25
+Ten_Minutes,Wind and Seismic Load,1.60
+Impact,Impact Load,2.00

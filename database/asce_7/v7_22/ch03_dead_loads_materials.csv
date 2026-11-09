@@ -1,0 +1,12 @@
+Material_ID,Category,Description,Unit_Weight_psf,Unit_Weight_pcf,Reference_Table
+DL_ROOF_01,Roofing,Asphalt shingles,2.0,,ASCE 7-22 Table C3.1-1a
+DL_ROOF_02,Roofing,Clay tile,10.0,,ASCE 7-22 Table C3.1-1a
+DL_ROOF_03,Roofing,Concrete tile,12.0,,ASCE 7-22 Table C3.1-1a
+DL_WOOD_01,Wood,Plywood per inch thickness,3.0,36.0,ASCE 7-22 Table C3.1-1a
+DL_WOOD_02,Wood,OSB per inch thickness,3.0,36.0,ASCE 7-22 Table C3.1-1a
+DL_CEIL_01,Ceilings,Gypsum board 1/2 in,2.2,,ASCE 7-22 Table C3.1-1a
+DL_CEIL_02,Ceilings,Gypsum board 5/8 in,2.8,,ASCE 7-22 Table C3.1-1a
+DL_FLOOR_01,Floor,Hardwood 3/4 in,3.0,,ASCE 7-22 Table C3.1-1a
+DL_FLOOR_02,Floor,Ceramic tile 3/4 in,10.0,,ASCE 7-22 Table C3.1-1a
+DL_CONC_01,Concrete,Normal weight reinforced concrete,,150.0,ASCE 7-22 Table C3.1-2
+DL_CONC_02,Concrete,Lightweight concrete,,115.0,ASCE 7-22 Table C3.1-2

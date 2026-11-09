@@ -1,0 +1,6 @@
+Bolt_Spec,Thread_Condition,Fnt_Nominal_Tension_ksi,Fnv_Nominal_Shear_ksi
+A325,Threads included in shear plane (N),90,54
+A325,Threads excluded from shear plane (X),90,68
+A490,Threads included in shear plane (N),113,68
+A490,Threads excluded from shear plane (X),113,84
+A307,Threads included (N),45,27

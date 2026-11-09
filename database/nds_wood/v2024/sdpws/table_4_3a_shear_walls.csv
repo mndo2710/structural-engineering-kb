@@ -1,0 +1,13 @@
+Sheathing_Material,Min_Nominal_Panel_Thickness_in,Min_Nominal_Nail_Penetration_in,Nail_Size,Edge_Nail_Spacing_in,Nominal_Unit_Shear_Seismic_plf,ASD_Allowable_Shear_Seismic_plf,Nominal_Unit_Shear_Wind_plf,ASD_Allowable_Shear_Wind_plf
+"Wood Structural Panels - Structural I",15/32,1.5,10d_common,6,680,340,950,475
+"Wood Structural Panels - Structural I",15/32,1.5,10d_common,4,1020,510,1430,715
+"Wood Structural Panels - Structural I",15/32,1.5,10d_common,3,1330,665,1860,930
+"Wood Structural Panels - Structural I",15/32,1.5,10d_common,2,1740,870,2435,1215
+"Wood Structural Panels - Sheathing",15/32,1.375,8d_common,6,520,260,730,365
+"Wood Structural Panels - Sheathing",15/32,1.375,8d_common,4,760,380,1065,532
+"Wood Structural Panels - Sheathing",15/32,1.375,8d_common,3,1020,510,1430,715
+"Wood Structural Panels - Sheathing",15/32,1.375,8d_common,2,1360,680,1900,950
+"Wood Structural Panels - Sheathing",7/16,1.375,8d_common,6,500,250,700,350
+"Wood Structural Panels - Sheathing",7/16,1.375,8d_common,4,730,365,1020,510
+"Wood Structural Panels - Sheathing",7/16,1.375,8d_common,3,980,490,1370,685
+"Wood Structural Panels - Sheathing",7/16,1.375,8d_common,2,1300,650,1820,910
