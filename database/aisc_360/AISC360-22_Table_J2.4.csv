@@ -1,0 +1,10 @@
+﻿Table J2.4 Minimum Size of Fillet Welds,
+"Material Thickness of Thinner Part Joined, in. (mm)","Minimum Size of Fillet Weld, [a] in. (mm)"
+To 1/4 (6) inclusive,1/8 (3)
+Over 1/4 (6) to 1/2 (13),3/16 (5)
+Over 1/2 (13) to 3/4 (19),1/4 (6)
+Over 3/4 (19),5/16 (8)
+,
+Footnotes:,
+[a],Leg dimension of fillet welds. Single pass welds must be used.
+Note:,See Section J2.2b for maximum size of fillet welds.
