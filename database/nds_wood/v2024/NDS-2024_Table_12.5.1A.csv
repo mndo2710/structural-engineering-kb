@@ -1,0 +1,7 @@
+﻿"Table 12.5.1A - End Distance Requirements","",""
+"Direction of Loading","End Distances",""
+"","Minimum end distance for C_Δ = 0.5","Minimum end distance for C_Δ = 1.0"
+"Perpendicular to Grain","2D","4D"
+"Parallel to Grain, Compression","2D","4D"
+"Parallel to Grain, Tension - Softwood","3.5D","7D"
+"Parallel to Grain, Tension - Hardwood","2.5D","5D"
