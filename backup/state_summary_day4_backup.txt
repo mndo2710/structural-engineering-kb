@@ -1,0 +1,65 @@
+================================================================================
+PROJECT STATE SUMMARY: structural-engineering-kb (US Structural Calculation App)
+Last Updated: 2026-11-13 (Completed through Day 4 of 10-Day Roadmap)
+Auto-Update Rule: Update this file every 3 turns to compress context & save tokens.
+================================================================================
+
+1. FINAL GOAL
+- Complete all lookup tables (`database/*.csv`) and calculation procedures (`procedures/*.md`) across a 10-day roadmap for a standalone US residential/light-commercial structural calculation desktop app (`structural_app/`), prior to coding `core/`, `exporters/`, and `gui/`.
+
+2. LOCKED RULES & CONVENTIONS
+- Language: Chat in Vietnamese; 100% of `.csv`, `.md`, code, and filenames in US Structural Engineering English (US Customary units, parallel ASD & LRFD).
+- CSV Standard (`@structural-database-csv`): Filename `[Code]_[TableNumber].csv`, `utf-8-sig` encoding, exact row/column order, exact mathematical symbols, complete verbatim footnotes at bottom, 5-step verification against `TCUS` reference PDFs.
+- Procedure Standard (`@structural-procedures`): 7-section Plan Check layout in `.md` format (1. Assumptions & Load Path; 2. Load Combos & Internal Forces; 3. Primary Member Checks; 4. Sequential Connection Limit States; 5. Supporting Substrate Checks; 6. Mandatory Detailing Notes; 7. Summary Checklist Table).
+- Direct Raw File Sync to Google Drive: Always upload `.csv`, `.md`, and `.txt` files via `drive:create_file` using `base64_content="file:///..."` and `mime_type="application/octet-stream"` so files remain raw `.csv`/`.md`/`.txt` for local desktop sync (never auto-convert to Google Sheets/Docs).
+- Token Optimization: Update `/structural-engineering-kb/state_summary.txt` automatically every 3 turns with current progress, active file IDs, and next steps.
+
+3. KEY GOOGLE DRIVE FOLDER IDs (CACHE FOR ZERO-SEARCH LOOKUP)
+- Reference Library Root (`TCUS`): `1WTG1-B0xZ0GozvfigreJvtLxJI6HnIwQ`
+  - `TCUS/NDS 2024`: `1FOWH4WhSNWjmc-gvuxh2I_uasV537qYk`
+- App Repo Root (`structural-engineering-kb`): `1tz7tBCDjFtiVpOVvN9MGxpduLx-EA7QO`
+  - `config/`: `1diBqCuQ_sjBEndCqNctSMxaUn3FulcO0`
+  - `database/`: `1JRyfJmMXhiXrjiZ4NQwhNS2Il4zEjuZC`
+    - `database/asce_7/v7_22/`: `1ZP0pQdN_yagra5j4MokpQuPL-5LbhQ9-`
+    - `database/ibc_cbc/v2024_ibc_v2025_cbc/`: `1k4dMvhOmeFlXBlhOHlkAZF8uQHvBCWdR`
+    - `database/nds_wood/v2024/`: `1NpbvWaDrRLN-kueHnXGbRDakt3D2t-Hv`
+    - `database/nds_wood/v2024/sdpws/`: `1Xb9aR189G5C3kcSg_6XdvpwBtrxt50Qd`
+    - `database/aisc_360/`: `1eGXXwAKdvRnsJtVZiuxsOLU6bptolYYF` (`ch_j_connections`: `1RNJmnDYJsyHXEAJknmmPWUPjk8q1LqTE`)
+    - `database/aci_318_tms_402/`: `1XDIYxCJpAwT8TDeoisfRNE5_vvAeviJk`
+    - `database/manufacturer_catalogs/simpson_strong_tie/`: `1ZFeYwdVJs9uU2gdGnni0HpKh7qrDDq-w`
+  - `procedures/`: `1KDHbmqfs4R3rbPvDPziAClQSHwOBGa33`
+    - `procedures/01_loads_and_seismic/`: `1XhzddV90SZQSUG-MjE2tL7MqVVq3rewF`
+    - `procedures/02_wood_design/`: `1LF3Bo3wcPPC4VQ-gg6yOnonXFfVR9Vlp`
+    - `procedures/03_steel_design/`: `1DKyoPc6B1L1f-Kqh1vOHwJYxvvksAXvQ`
+    - `procedures/04_concrete_masonry_foundation/`: `19TqDxKRM_Inqp7ONpX2D_TLB_QMvo6OG`
+    - `procedures/05_plan_check_responses/`: `1ecvnjT4cqbCfoURXqaWH5SGyv0ahVAhx`
+    - `procedures/06_components_and_cladding/`: `1LQXqhYmZjV0hw8h1TEiJnDHOzxZfXuHN`
+  - `core/`: `1-9nKxCr7GbyovVq5cabrVV6c6nIRy3rR` (`asce7`: `1dmUSm_JmXBdDFjD9MAb02PcXkDQ5S61Q`, `aisc360`: `1cHbTiyRGeiAiuFX4f-te-JCzpZan8X1i`, `nds`: `1Y0k0otOuMWPG0oxIR3zXhf1M-HWciRpS`, `aci318`: `1qwmaummhPqRCGIbTcsvkFAxuSkPzNpL5`)
+  - `exporters/`: `1ir9fWjvnHNWgnHZ1hU1askTMMlnYKA5V`
+  - `gui/`: `18qkaAMzM-9Ov58HMnFPY0Htza1MRX1M6`
+  - `tests/`: `18RwvXqjvyaQj6d6qKnw-DMNcFc0nbDIb`
+
+4. COMPLETED WORK
+- [DONE] Repo Folder Structure & Skeleton Files (`core/`, `exporters/`, `gui/`, `tests/`, `config/app_settings.json`, `main.py`, `requirements.txt`).
+- [DONE] Day 1 (ASCE 7-22 Basic C&C Wind — Parapet & Roof Overhang):
+  - CSVs in `database/asce_7/v7_22/`: `ASCE7-22_Table_26.6-1.csv`, `ASCE7-22_Table_26.9-1.csv`, `ASCE7-22_Table_26.10-1.csv`, `ASCE7-22_Table_26.13-1.csv`, `ASCE7-22_Table_C30.3-1.csv`, `ASCE7-22_Table_C30.3-2_C30.3-3.csv`.
+  - Procedures in `procedures/01_loads_and_seismic/`: `cc_wind_parapet_workflow.md`, `cc_wind_overhang_workflow.md`.
+- [DONE] Day 2 (ASCE 7-22 & IBC 2024 C&C Wind/Seismic — Awning, Trellis, Guardrail & Load Combos):
+  - CSVs in `database/asce_7/v7_22/` & `ibc_cbc/`: `ASCE7-22_Table_2.3-1_2.4-1_Load_Combinations.csv`, `ASCE7-22_Table_13.5-1.csv`, `ASCE7-22_Figure_29.4-2.csv`, `ASCE7-22_Figure_30.11-1A_1B.csv`, `IBC-2024_Section_1607.9_Guardrail_Loads.csv`.
+  - Procedures in `procedures/01_loads_and_seismic/`: `cc_awning_canopy_loads_workflow.md`, `cc_trellis_open_wind_seismic_workflow.md`, `guardrail_handrail_loads_ibc_workflow.md`.
+- [DONE] Day 3 (NDS 2024 Fasteners — Nails, Wood Screws, Lag Screws & Simpson SDS):
+  - Pre-existing in `database/nds_wood/v2024/`: `NDS-2024_Table_11.3.1.csv`, `11.3.3.csv`, `11.3.4.csv`, `11.3.6A-D.csv`, `12.2A.csv`, `12.5.1A.csv`, `12K.csv`, `ch02_table_2_3_2_load_duration.csv`, `supplement_table_1b_section_properties.csv`, `supplement_table_4a_sawn_lumber.csv`.
+  - Newly added CSVs in `database/nds_wood/v2024/`: `NDS-2024_Table_12.2B.csv`, `12.2C.csv`, `12.3.3.csv`, `12.3.3A.csv`, `12.5.1B_12.5.1C_12.5.1D_12.5.1E.csv`, `12J.csv`, `12L.csv`, `12M.csv`, `12N.csv`, `12P.csv`, `Table_L2_L3_L4_I1.csv`.
+  - Newly added CSV in `database/manufacturer_catalogs/simpson_strong_tie/`: `ICC-ESR-2236_Table_1_2_3_4_5.csv`.
+  - Newly added Procedures in `procedures/02_wood_design/`: `wood_lag_screw_nds_workflow.md`, `wood_nail_screw_fastener_nds_workflow.md`.
+- [DONE] Day 4 (NDS 2024 Bolts, Appendix L1/L7/L8 & Appendix E Brittle Group Tear-Out):
+  - CSVs in `database/nds_wood/v2024/`: `NDS-2024_Table_12A.csv` (`1kEww0CRdAsVIyB-1t3D29evsBKOz1Gbv`), `12B.csv` (`1Gewgr4b25XRjxre4gJz3oUnZbJbQiRP_`), `12C.csv` (`1rltXlRCotsl0C8ddU2ARgz3u-C7LR-ZO`), `12D.csv` (`1a7P01j3CBcQikJgYek-xAxrQ3M335zvt`), `12E.csv` (`1uot6ET_IdGvRyCFn8jJQawdBb0RG7GeK`), `12F.csv` (`1mC_g046EDAF_xl8MbyZh0cjngi7DLGLT`), `12G.csv` (`1__laZrA8sWeKM0pcdZkRJvD3QmuoZAsH`), `12H.csv` (`1v3l3IKNnJfMq8zTlRlOWwQNP84P_hshy`), `12I.csv` (`1GQN-Eu58d3n6ANWr9Ny8PjDJU2DBDLtu`), `Table_L1_L7_L8.csv` (`1tU1kOOSSkwCaPwXLVk8kdzB_-NPpUUDj`).
+  - Procedure in `procedures/02_wood_design/`: `wood_bolt_connection_nds_workflow.md` (`1ZOw3Pv9Hbr2vfwi_JUFyxRjFgYE5HiiN`) — Yield Limit Equations (Single & Double Shear), $C_g$, $C_\Delta$, Appendix E ($Z'_{NT}, Z'_{RT}, Z'_{GT}$), Effective Depth Shear ($d_e$), and Washer Bearing under Axial Bolt Tension.
+
+5. NEXT STEPS (REMAINING ROADMAP)
+- [NEXT] Day 5: Wood Lateral (SDPWS 2021/2024 Shear Walls & Diaphragms, Chord/Collector Straps, Simpson Strong-Tie Joist Hangers / Hurricane Ties).
+- [PENDING] Day 6: Steel Connections Part 1 (AISC 360-22 Bolts & Welds, Tables J2.4, J2.5, J3.2, J3.3, Base Plates).
+- [PENDING] Day 7: Steel Connections Part 2 (Shear Tab, Single Angle, HSS-to-HSS Moment/Shear Connections per AISC Ch. J & K).
+- [PENDING] Day 8: Concrete & CMU Anchorage (ACI 318-19/25 Ch. 17 Cast-in/Post-Installed Anchors, TMS 402 CMU Out-of-Plane Breakout & Embedded Post).
+- [PENDING] Days 9–10: End-to-End C&C Sub-Assembly Synthesis Procedures (`06_components_and_cladding/`: Parapet, Cantilever/Tie-Back Awning, Wood/Steel Trellis, Deck Guardrail Post-to-Framing/Slab).
+================================================================================

@@ -1,0 +1,8 @@
+﻿"Table 11.3.4 - Temperature Factors, C_t, for Connections","","",""
+"In-Service Moisture Conditions [1]","C_t","C_t","C_t"
+"In-Service Moisture Conditions [1]","T <= 100°F","100°F < T <= 125°F","125°F < T <= 150°F"
+"Dry","1.0","0.8","0.7"
+"Wet","1.0","0.7","0.5"
+"","","",""
+"Footnotes:","","",""
+"[1]","Wet and dry service conditions for connections are specified in 11.3.3.","",""

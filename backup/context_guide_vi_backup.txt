@@ -1,0 +1,49 @@
+================================================================================
+HƯỚNG DẪN SỬ DỤNG 3 FILE CONTEXT CỐT LÕI - DỰ ÁN structural-engineering-kb
+Cập nhật: 2026-11-14
+Thư mục gốc Google Drive: 1tz7tBCDjFtiVpOVvN9MGxpduLx-EA7QO
+================================================================================
+
+1. VAI TRÒ CỦA 3 FILE CONTEXT
+--------------------------------------------------------------------------------
+1) state_summary.txt (State Context - Trạng thái & Chỉ mục)
+   - File ID: 1R0GaU-5zKJaNllUXudJYObH8VFlr9oOl
+   - Vai trò: Lưu tiến độ hiện tại, danh sách công việc đã hoàn thành/tiếp theo
+     và toàn bộ Google Drive Folder/File ID để tra cứu nhanh (zero-search).
+   - Tần suất cập nhật: Tự động cập nhật mỗi 3 turns hoặc khi xong milestone.
+
+2) rules.md (Constraint Context - Quy tắc làm việc bắt buộc)
+   - File ID: 1YV019YOt6GxFoGAm0byItpKLtuDIQKAg
+   - Vai trò: Khóa toàn bộ 8 nhóm quy tắc làm việc (ASD/LRFD, hệ đơn vị
+     US Customary, chuẩn CSV/Markdown 7 mục/Excel 17 cột Arial 10pt, quy tắc
+     đồng bộ file thô, gom file cũ vào backup/, chuẩn trả lời Plan Check).
+   - Tần suất cập nhật: Cập nhật ngay khi user thêm hoặc điều chỉnh quy tắc.
+
+3) proposed.md (Architectural Context - Bản thiết kế kiến trúc SAD v1.0)
+   - File ID: 15kJVFqyGOWWIvIzeO3Eu4v4ANxqIUwc3
+   - Vai trò: Tài liệu định hướng kiến trúc phần mềm Windows Desktop V1
+     (PySide6, SQLite, Google Drive OAuth Sync, openpyxl, ReportLab, 5 cấp độ
+     kiểm thử pytest, không tích hợp AI trong runtime V1).
+   - Quy tắc chỉnh sửa: CHỈ cập nhật mục "2.1 Existing Project Status" song song
+     với state_summary.txt; KHÔNG tự ý sửa các mục khác nếu chưa được phép.
+
+2. CÁCH NẠP CONTEXT TIẾT KIỆM TOKEN KHI MỞ PHIÊN MỚI
+--------------------------------------------------------------------------------
+- Bước 1 (Mặc định mỗi phiên mới): Chỉ đọc `state_summary.txt` + `rules.md`
+  để nắm trạng thái, ID thư mục và quy tắc làm việc (nhẹ, tiết kiệm token).
+- Bước 2 (Đọc theo nhu cầu): Chỉ đọc đúng mục liên quan trong `proposed.md`
+  khi bắt đầu code module tương ứng (tránh nạp cả file ~45 KB vào mọi prompt):
+  * Mục 5 & 7   : KnowledgeBaseService & Application Service Layer
+  * Mục 6       : Calculation Engine (`core/`) & `CalculationResult`
+  * Mục 8       : Giao diện PySide6 (`gui/`) & 4-Panel Workspace
+  * Mục 9       : SQLite Database (`storage/projects/`) & Revision History
+  * Mục 10      : CloudSyncService (Google Drive API, OAuth 2.0, Offline Cache)
+  * Mục 11      : Export Engine (`exporters/`: XLSX & ReportLab PDF)
+  * Mục 12      : Kiểm thử 5 cấp độ (`tests/`: Unit, Reference, Benchmark, E2E)
+
+3. LƯU Ý PHÂN BIỆT DEVELOPMENT VS. RUNTIME
+--------------------------------------------------------------------------------
+- Khi PHÁT TRIỂN (Development): 3 file trên là context cho Gemini / IDE Agent.
+- Khi CHẠY THỰC TẾ (V1 Runtime): Ứng dụng chạy 100% bằng Python tất định,
+  KHÔNG gọi AI/LLM và KHÔNG nạp `proposed.md` làm prompt (SAD Mục 1.3, ADR-09).
+================================================================================

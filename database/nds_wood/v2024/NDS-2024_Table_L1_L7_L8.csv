@@ -1,0 +1,34 @@
+﻿"NDS 2024 Appendix Tables L1, L7, and L8 – Standard Hex Bolts, Metal Hardware Nails, and Standard Cut Washers"
+Appendix Table,Component Type,Nominal Size / Dash No.,Diameter D or Inside Dia A (in.),Root Dia D_r or Outside Dia B (in.),Width Across Flats F or Thickness C (in.),Head Height H or Length L (in.),Thread Length T (L <= 6 in.),Thread Length T (L > 6 in.),Standard / Notes
+Table L1 [1],Standard Hex Bolt,"1/4""",0.250,0.189,7/16 (0.4375),11/64 (0.1719),3/4 (0.750),1 (1.000),"ANSI/ASME B18.2.1; UNC thread series (ANSI/ASME B1.1); F_yb = 45,000 psi"
+Table L1 [1],Standard Hex Bolt,"5/16""",0.3125,0.245,1/2 (0.500),7/32 (0.2188),7/8 (0.875),1-1/8 (1.125),"ANSI/ASME B18.2.1; UNC thread series (ANSI/ASME B1.1); F_yb = 45,000 psi"
+Table L1 [1],Standard Hex Bolt,"3/8""",0.375,0.298,9/16 (0.5625),1/4 (0.250),1 (1.000),1-1/4 (1.250),"ANSI/ASME B18.2.1; UNC thread series (ANSI/ASME B1.1); F_yb = 45,000 psi"
+Table L1 [1],Standard Hex Bolt,"1/2""",0.500,0.406,3/4 (0.750),11/32 (0.3438),1-1/4 (1.250),1-1/2 (1.500),"ANSI/ASME B18.2.1; UNC thread series (ANSI/ASME B1.1); F_yb = 45,000 psi"
+Table L1 [1],Standard Hex Bolt,"5/8""",0.625,0.514,15/16 (0.9375),27/64 (0.4219),1-1/2 (1.500),1-3/4 (1.750),"ANSI/ASME B18.2.1; UNC thread series (ANSI/ASME B1.1); F_yb = 45,000 psi"
+Table L1 [1],Standard Hex Bolt,"3/4""",0.750,0.627,1-1/8 (1.125),1/2 (0.500),1-3/4 (1.750),2 (2.000),"ANSI/ASME B18.2.1; UNC thread series (ANSI/ASME B1.1); F_yb = 45,000 psi"
+Table L1 [1],Standard Hex Bolt,"7/8""",0.875,0.739,1-5/16 (1.3125),37/64 (0.5781),2 (2.000),2-1/4 (2.250),"ANSI/ASME B18.2.1; UNC thread series (ANSI/ASME B1.1); F_yb = 45,000 psi"
+Table L1 [1],Standard Hex Bolt,"1""",1.000,0.847,1-1/2 (1.500),43/64 (0.6719),2-1/4 (2.250),2-1/2 (2.500),"ANSI/ASME B18.2.1; UNC thread series (ANSI/ASME B1.1); F_yb = 45,000 psi"
+Table L8 [2],Standard Cut Washer,"3/8""",0.438 (A: ID),1.000 (B: OD),0.083 (C: Thickness),N/A,N/A,N/A,ANSI/ASME B18.22.1
+Table L8 [2],Standard Cut Washer,"1/2""",0.562 (A: ID),1.375 (B: OD),0.109 (C: Thickness),N/A,N/A,N/A,ANSI/ASME B18.22.1
+Table L8 [2],Standard Cut Washer,"5/8""",0.688 (A: ID),1.750 (B: OD),0.134 (C: Thickness),N/A,N/A,N/A,ANSI/ASME B18.22.1
+Table L8 [2],Standard Cut Washer,"3/4""",0.812 (A: ID),2.000 (B: OD),0.148 (C: Thickness),N/A,N/A,N/A,ANSI/ASME B18.22.1
+Table L8 [2],Standard Cut Washer,"7/8""",0.938 (A: ID),2.250 (B: OD),0.165 (C: Thickness),N/A,N/A,N/A,ANSI/ASME B18.22.1
+Table L8 [2],Standard Cut Washer,"1""",1.062 (A: ID),2.500 (B: OD),0.165 (C: Thickness),N/A,N/A,N/A,ANSI/ASME B18.22.1
+Table L7 [3],Metal Hardware Nail,"Dash 01 (1-1/4"" x 0.131"")",0.131,0.281 (Head H),N/A,1.250 (Length L),N/A,N/A,"ASTM F1667 (e.g., 8d x 1-1/2"" / 10d x 1-1/2"" joist hanger nails)"
+Table L7 [3],Metal Hardware Nail,"Dash 02 (1-1/2"" x 0.131"")",0.131,0.281 (Head H),N/A,1.500 (Length L),N/A,N/A,ASTM F1667
+Table L7 [3],Metal Hardware Nail,"Dash 03 (2-1/4"" x 0.131"")",0.131,0.281 (Head H),N/A,2.250 (Length L),N/A,N/A,ASTM F1667
+Table L7 [3],Metal Hardware Nail,"Dash 04 (2-3/8"" x 0.131"")",0.131,0.281 (Head H),N/A,2.375 (Length L),N/A,N/A,ASTM F1667
+Table L7 [3],Metal Hardware Nail,"Dash 05 (2-1/2"" x 0.131"")",0.131,0.281 (Head H),N/A,2.500 (Length L),N/A,N/A,ASTM F1667
+Table L7 [3],Metal Hardware Nail,"Dash 06 (1-1/4"" x 0.148"")",0.148,0.281 (Head H),N/A,1.250 (Length L),N/A,N/A,ASTM F1667
+Table L7 [3],Metal Hardware Nail,"Dash 07 (1-1/2"" x 0.148"")",0.148,0.281 (Head H),N/A,1.500 (Length L),N/A,N/A,ASTM F1667
+Table L7 [3],Metal Hardware Nail,"Dash 08 (2-1/2"" x 0.148"")",0.148,0.281 (Head H),N/A,2.500 (Length L),N/A,N/A,ASTM F1667
+Table L7 [3],Metal Hardware Nail,"Dash 09 (3"" x 0.148"")",0.148,0.281 (Head H),N/A,3.000 (Length L),N/A,N/A,ASTM F1667
+Table L7 [3],Metal Hardware Nail,"Dash 10 (3-1/2"" x 0.148"")",0.148,0.281 (Head H),N/A,3.500 (Length L),N/A,N/A,ASTM F1667
+Table L7 [3],Metal Hardware Nail,"Dash 11 (2-1/2"" x 0.162"")",0.162,0.281 (Head H),N/A,2.500 (Length L),N/A,N/A,ASTM F1667
+Table L7 [3],Metal Hardware Nail,"Dash 12 (3"" x 0.162"")",0.162,0.281 (Head H),N/A,3.000 (Length L),N/A,N/A,ASTM F1667
+Table L7 [3],Metal Hardware Nail,"Dash 13 (3-1/2"" x 0.162"")",0.162,0.281 (Head H),N/A,3.500 (Length L),N/A,N/A,ASTM F1667
+
+Footnotes:
+[1],Table L1: Tolerances are specified in ANSI/ASME B18.2.1. Full-body diameter bolt is shown. Root diameter based on UNC thread series (see ANSI/ASME B1.1).
+[2],"Table L8: Tolerances are provided in ANSI/ASME B18.22.1. For other standard cut washers, see ANSI/ASME B18.22.1."
+[3],Table L7: Tolerances are specified in ASTM F1667.

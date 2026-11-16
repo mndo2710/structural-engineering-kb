@@ -1,0 +1,44 @@
+﻿Component Category,Architectural Component or Element,C_AR (Supported at or Below Grade Plane),C_AR (Supported Above Grade Plane by a Structure),R_po,Omega_0p [a],Source Reference
+Interior Nonstructural Walls and Partitions [b],Plain (unreinforced) masonry walls,1,1,1.5,1.5,ASCE 7-22 Table 13.5-1
+Interior Nonstructural Walls and Partitions [b],Light frame <= 9 ft (2.74 m) in height,1,1,1.5,2,ASCE 7-22 Table 13.5-1
+Interior Nonstructural Walls and Partitions [b],Light frame > 9 ft (2.74 m) in height,1.4,1.4,1.5,2,ASCE 7-22 Table 13.5-1
+Interior Nonstructural Walls and Partitions [b],Reinforced masonry walls,1,1,1.5,2,ASCE 7-22 Table 13.5-1
+Interior Nonstructural Walls and Partitions [b],All other walls and partitions,2.2,2.8,1.5,1.5,ASCE 7-22 Table 13.5-1
+Cantilever Elements (Unbraced or braced to structural frame below its center of mass),Parapets and cantilever interior nonstructural walls,1.8,2.2,1.5,1.75,ASCE 7-22 Table 13.5-1
+Cantilever Elements (Unbraced or braced to structural frame below its center of mass),Chimneys where laterally braced or supported by the structural frame,1.8,2.2,1.5,1.75,ASCE 7-22 Table 13.5-1
+Cantilever Elements (Braced to structural frame above its center of mass),Parapets,1,1,1.5,2,ASCE 7-22 Table 13.5-1
+Cantilever Elements (Braced to structural frame above its center of mass),Chimneys,1,1,1.5,2,ASCE 7-22 Table 13.5-1
+Cantilever Elements (Braced to structural frame above its center of mass),Exterior nonstructural walls [b],1,1,1.5,2,ASCE 7-22 Table 13.5-1
+Exterior Nonstructural Wall Elements and Connections [b],Wall element,1,1,1.5,2,ASCE 7-22 Table 13.5-1
+Exterior Nonstructural Wall Elements and Connections [b],Body of wall panel connections,1,1,1.5,2,ASCE 7-22 Table 13.5-1
+Exterior Nonstructural Wall Elements and Connections [b],Fasteners of the connecting system,2.2,2.8,1.5,1,ASCE 7-22 Table 13.5-1
+Veneer,Limited-deformability elements and attachments,1,1,1.5,2,ASCE 7-22 Table 13.5-1
+Veneer,Low-deformability elements and attachments,1,1,1.5,2,ASCE 7-22 Table 13.5-1
+Penthouses (except where framed by an extension of the building frame),Seismic force-resisting systems with R >= 6,N/A,1.4,2,2,ASCE 7-22 Table 13.5-1
+Penthouses (except where framed by an extension of the building frame),Seismic force-resisting systems with 6 > R >= 4,N/A,2.2,2,1.75,ASCE 7-22 Table 13.5-1
+Penthouses (except where framed by an extension of the building frame),Seismic force-resisting systems with R < 4,N/A,2.8,2,1.5,ASCE 7-22 Table 13.5-1
+Penthouses (except where framed by an extension of the building frame),Other systems,N/A,2.8,1.5,1.5,ASCE 7-22 Table 13.5-1
+Ceilings,All,1,1,1.5,2,ASCE 7-22 Table 13.5-1
+Cabinets,"Permanent floor-supported storage cabinets > 6 ft (1.83 m) in height, including contents",1,1,1.5,2,ASCE 7-22 Table 13.5-1
+Cabinets,"Library shelving, book stacks, and bookshelves > 6 ft (1.83 m) in height, including contents",1,1,1.5,2,ASCE 7-22 Table 13.5-1
+Laboratory Equipment,All,1,1,1.5,2,ASCE 7-22 Table 13.5-1
+Access Floors,Special access floors (designed in accordance with Section 13.5.7.2),1,1,2,2,ASCE 7-22 Table 13.5-1
+Access Floors,All other,2.2,2.8,1.5,1.5,ASCE 7-22 Table 13.5-1
+Appendages and Ornamentations,"All (includes attached awnings, canopies, architectural trellises, fins, and sunshades)",1.8,2.2,1.5,1.75,ASCE 7-22 Table 13.5-1
+Signs and Billboards,All,1.8,2.2,1.5,1.75,ASCE 7-22 Table 13.5-1
+Other Rigid Components,High-deformability elements and attachments,1,1,1.5,2,ASCE 7-22 Table 13.5-1
+Other Rigid Components,Limited-deformability elements and attachments,1,1,1.5,2,ASCE 7-22 Table 13.5-1
+Other Rigid Components,Low-deformability materials and attachments,1,1,1.5,2,ASCE 7-22 Table 13.5-1
+Other Flexible Components,High-deformability elements and attachments,1.4,1.4,1.5,2,ASCE 7-22 Table 13.5-1
+Other Flexible Components,Limited-deformability elements and attachments,1.8,2.2,1.5,1.75,ASCE 7-22 Table 13.5-1
+Other Flexible Components,Low-deformability materials and attachments,2.2,2.8,1.5,1.5,ASCE 7-22 Table 13.5-1
+Egress Stairways and Ramps,Egress stairways not part of the building structure seismic force-resisting system,1,1,1.5,2,ASCE 7-22 Table 13.5-1
+Egress Stairways and Ramps,Egress stairs and ramp fasteners and attachments,1.8,2.2,1.5,1.75,ASCE 7-22 Table 13.5-1
+
+Footnotes & Design Equations (ASCE 7-22 Section 13.3.1 & Table 13.5-1):
+[a] Overstrength factor Omega_0p where required for nonstructural anchorage to concrete and masonry in accordance with Section 13.4.2.
+"[b] Where flexible diaphragms provide lateral support for concrete or masonry walls and partitions, the design forces for anchorage to the diaphragm shall be as specified in Section 12.11.2."
+[Eq. 13.3-1] Horizontal Seismic Design Force: Fp = 0.4 * SDS * Ip * Wp * (Hf / R_mu) * (C_AR / R_po).
+[Eq. 13.3-2 & 13.3-3] Upper and Lower Limits: Fp_max = 1.6 * SDS * Ip * Wp; Fp_min = 0.3 * SDS * Ip * Wp.
+"[Eq. 13.3-5] Force Amplification Factor (where period Ta of supporting structure is unknown): Hf = 1 + 2.5 * (z / h). For components at or below grade plane, Hf = 1.0."
+"[Eq. 13.3-6] Structure Ductility Reduction Factor (above grade plane): R_mu = sqrt(1.1 * R / (Ie * Omega_0)) >= 1.3. Where supporting structure SFRS is unknown, R_mu = 1.3. At or below grade plane, R_mu = 1.0."

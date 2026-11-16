@@ -1,0 +1,74 @@
+{
+  "APP_NAME": "Structural Engineering Calculation Application",
+  "PROJECT_KEY": "structural-engineering-kb",
+  "VERSION": "1.0.0",
+  "ARCHITECTURE_BASELINE": "SAD_v1.0_Proposed_2026-11-13",
+  "PLATFORM": "Windows_Desktop",
+  "GUI_FRAMEWORK": "PySide6",
+  "AI_INTEGRATION": "None_V1_Deterministic_Only",
+  "UNIT_SYSTEM": "US_Customary",
+  "DESIGN_METHODS_SUPPORTED": [
+    "ASD",
+    "LRFD"
+  ],
+  "DEFAULT_DESIGN_METHOD": "ASD",
+  "PATHS": {
+    "DATABASE_DIR": "database",
+    "PROCEDURES_DIR": "procedures",
+    "CORE_DIR": "core",
+    "APP_DIR": "app",
+    "GUI_DIR": "gui",
+    "EXPORTERS_DIR": "exporters",
+    "CLOUD_DIR": "cloud",
+    "LOCAL_CACHE_DIR": "storage/local_cache",
+    "PROJECTS_DIR": "storage/projects",
+    "BACKUPS_DIR": "storage/backups",
+    "SQLITE_DB_PATH": "storage/projects/structural_app.sqlite3",
+    "REFERENCE_MANIFEST_PATH": "config/reference_manifest.json",
+    "ACTIVE_CODE_REGISTRY_PATH": "config/active_code_registry.json",
+    "LOGS_DIR": "logs",
+    "DOCS_DIR": "docs",
+    "ARCHIVE_BACKUP_DIR": "backup"
+  },
+  "LOGGING": {
+    "APPLICATION_LOG": "logs/application.log",
+    "CALCULATION_LOG": "logs/calculation.log",
+    "CLOUD_SYNC_LOG": "logs/cloud_sync.log",
+    "ERROR_LOG": "logs/error.log",
+    "REDACT_CREDENTIALS": true
+  },
+  "CLOUD_SYNC": {
+    "PROVIDER": "Google_Drive_API_v3",
+    "AUTH_METHOD": "OAuth_2.0_Windows_Keyring",
+    "ROOT_FOLDER_ID": "1tz7tBCDjFtiVpOVvN9MGxpduLx-EA7QO",
+    "TCUS_REFERENCE_FOLDER_ID": "1WTG1-B0xZ0GozvfigreJvtLxJI6HnIwQ",
+    "PRESERVE_RAW_FILES": true,
+    "RAW_UPLOAD_MIME_TYPE": "application/octet-stream",
+    "SYNC_ON_STARTUP": false,
+    "SYNC_ON_SHUTDOWN": false,
+    "CONFLICT_POLICY": "preserve_both_require_explicit_resolution"
+  },
+  "EXCEL_EXPORT": {
+    "ENGINE": "openpyxl",
+    "FONT_FAMILY": "Arial",
+    "FONT_SIZE_PT": 10,
+    "VERTICAL_ALIGNMENT": "baseline",
+    "TOTAL_COLUMNS": 17,
+    "COLUMN_RANGE": "A:Q",
+    "ROW_HEIGHT_PT": 18.0,
+    "ZERO_BODY_BORDERS": true,
+    "INCLUDE_INPUT_SHEET": true,
+    "INCLUDE_CALCULATION_SHEET": true,
+    "INCLUDE_LIMIT_STATE_SUMMARY": true,
+    "INCLUDE_SOURCE_AUDIT_TAB": true,
+    "INCLUDE_DATABASE_TAB": true,
+    "DISPLAY_FLOW": "Equation -> Substitution -> Result -> Limit -> DCR",
+    "MULTIPLICATION_SYMBOL": "."
+  },
+  "PDF_EXPORT": {
+    "ENGINE": "ReportLab",
+    "LAYOUT_SECTIONS": 12,
+    "PROCEDURE_BASIS_SECTIONS": 7,
+    "PAGE_SIZE": "LETTER"
+  }
+}

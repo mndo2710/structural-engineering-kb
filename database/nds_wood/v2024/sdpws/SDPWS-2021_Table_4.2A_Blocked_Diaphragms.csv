@@ -1,0 +1,30 @@
+﻿Sheathing Grade,Common Nail Size,Minimum Fastener Penetration in Framing (in.),Minimum Nominal Panel Thickness (in.),Minimum Nominal Width of Nailed Face at Adjoining Panel Edges and Boundaries (in.),SEISMIC: vs (plf) [Spacing 6 in. Boundary / 6 in. Other],SEISMIC: Ga OSB (kips/in.) [Spacing 6/6],SEISMIC: Ga PLY (kips/in.) [Spacing 6/6],SEISMIC: vs (plf) [Spacing 4 in. Boundary / 6 in. Other],SEISMIC: Ga OSB (kips/in.) [Spacing 4/6],SEISMIC: Ga PLY (kips/in.) [Spacing 4/6],SEISMIC: vs (plf) [Spacing 2-1/2 in. Boundary / 4 in. Other],SEISMIC: Ga OSB (kips/in.) [Spacing 2.5/4],SEISMIC: Ga PLY (kips/in.) [Spacing 2.5/4],SEISMIC: vs (plf) [Spacing 2 in. Boundary / 3 in. Other],SEISMIC: Ga OSB (kips/in.) [Spacing 2/3],SEISMIC: Ga PLY (kips/in.) [Spacing 2/3],WIND: vw (plf) [Spacing 6 in. Boundary / 6 in. Other],WIND: vw (plf) [Spacing 4 in. Boundary / 6 in. Other],WIND: vw (plf) [Spacing 2-1/2 in. Boundary / 4 in. Other],WIND: vw (plf) [Spacing 2 in. Boundary / 3 in. Other],Source Reference
+Structural I,"6d (2""x0.113"")",1-1/4,5/16,2,370,15,12,500,8.5,7.5,750,12,10,840,20,15,520,700,1050,1175,ANSI/AWC SDPWS Table 4.2A
+Structural I,"6d (2""x0.113"")",1-1/4,5/16,3,420,12,9.5,560,7.0,6.0,840,9.5,8.5,950,17,13,590,785,1175,1330,ANSI/AWC SDPWS Table 4.2A
+Structural I,"8d (2-1/2""x0.131"")",1-3/8,3/8,2,540,14,11,720,9.0,7.5,1060,13,10,1200,21,15,755,1010,1485,1680,ANSI/AWC SDPWS Table 4.2A
+Structural I,"8d (2-1/2""x0.131"")",1-3/8,3/8,3,600,12,10,800,7.5,6.5,1200,10,9.0,1350,18,13,840,1120,1680,1890,ANSI/AWC SDPWS Table 4.2A
+Structural I,"10d (3""x0.148"")",1-1/2,15/32,2,640,24,17,850,15,12,1280,20,15,1460,31,21,895,1190,1790,2045,ANSI/AWC SDPWS Table 4.2A
+Structural I,"10d (3""x0.148"")",1-1/2,15/32,3,720,20,15,960,12,9.5,1440,16,13,1640,26,18,1010,1345,2015,2295,ANSI/AWC SDPWS Table 4.2A
+Sheathing and Single-Floor,"6d (2""x0.113"")",1-1/4,5/16,2,340,15,10,450,9.0,7.0,670,13,9.5,760,21,13,475,630,940,1065,ANSI/AWC SDPWS Table 4.2A
+Sheathing and Single-Floor,"6d (2""x0.113"")",1-1/4,5/16,3,380,12,9.0,500,7.0,6.0,760,10,8.0,860,17,12,530,700,1065,1205,ANSI/AWC SDPWS Table 4.2A
+Sheathing and Single-Floor,"6d (2""x0.113"")",1-1/4,3/8,2,370,13,9.5,500,7.0,6.0,750,10,8.0,840,18,12,520,700,1050,1175,ANSI/AWC SDPWS Table 4.2A
+Sheathing and Single-Floor,"6d (2""x0.113"")",1-1/4,3/8,3,420,10,8.0,560,5.5,5.0,840,8.5,7.0,950,14,10,590,785,1175,1330,ANSI/AWC SDPWS Table 4.2A
+Sheathing and Single-Floor,"8d (2-1/2""x0.131"")",1-3/8,3/8,2,480,15,11,640,9.5,7.5,960,13,9.5,1090,21,13,670,895,1345,1525,ANSI/AWC SDPWS Table 4.2A
+Sheathing and Single-Floor,"8d (2-1/2""x0.131"")",1-3/8,3/8,3,540,12,9.5,720,7.5,6.0,1080,11,8.5,1220,18,12,755,1010,1510,1710,ANSI/AWC SDPWS Table 4.2A
+Sheathing and Single-Floor,"8d (2-1/2""x0.131"")",1-3/8,7/16,2,510,14,10,680,8.5,7.0,1010,12,9.5,1150,20,13,715,950,1415,1610,ANSI/AWC SDPWS Table 4.2A
+Sheathing and Single-Floor,"8d (2-1/2""x0.131"")",1-3/8,7/16,3,570,11,9.0,760,7.0,6.0,1140,10,8.0,1290,17,12,800,1065,1595,1805,ANSI/AWC SDPWS Table 4.2A
+Sheathing and Single-Floor,"8d (2-1/2""x0.131"")",1-3/8,15/32,2,540,13,9.5,720,7.5,6.5,1060,11,8.5,1200,19,13,755,1010,1485,1680,ANSI/AWC SDPWS Table 4.2A
+Sheathing and Single-Floor,"8d (2-1/2""x0.131"")",1-3/8,15/32,3,600,10,8.5,800,6.0,5.5,1200,9.0,7.5,1350,15,11,840,1120,1680,1890,ANSI/AWC SDPWS Table 4.2A
+Sheathing and Single-Floor,"10d (3""x0.148"")",1-1/2,15/32,2,580,25,15,770,15,11,1150,21,14,1310,33,18,810,1080,1610,1835,ANSI/AWC SDPWS Table 4.2A
+Sheathing and Single-Floor,"10d (3""x0.148"")",1-1/2,15/32,3,650,21,14,860,12,9.5,1300,17,12,1470,28,16,910,1205,1820,2060,ANSI/AWC SDPWS Table 4.2A
+Sheathing and Single-Floor,"10d (3""x0.148"")",1-1/2,19/32,2,640,21,14,850,13,9.5,1280,18,12,1460,28,17,895,1190,1790,2045,ANSI/AWC SDPWS Table 4.2A
+Sheathing and Single-Floor,"10d (3""x0.148"")",1-1/2,19/32,3,720,17,12,960,10,8.0,1440,14,11,1640,24,15,1010,1345,2015,2295,ANSI/AWC SDPWS Table 4.2A
+
+Notes and Footnotes (ANSI/AWC SDPWS Table 4.2A - Blocked Wood Structural Panel Diaphragms):
+"1. Nominal unit shear capacities (vs for Seismic and vw for Wind) shall be adjusted in accordance with Section 4.2.3 to determine ASD allowable unit shear capacity (v_ASD = v_nominal / 2.0, Omega = 2.0) and LRFD factored unit resistance (phi * v_n = 0.80 * v_nominal, phi_D = 0.80). For wind design, vw = 1.4 * vs."
+"2. Nominal unit shear capacities apply to diaphragms framed with Douglas Fir-Larch (G = 0.50) or Southern Pine (G = 0.55) lumber. For framing of other species with specific gravity G < 0.50 (based on NDS Table 12.3.3A), multiply tabulated nominal shear capacities by C_sp = 1 - (0.5 - G) <= 1.0 (e.g., C_sp = 0.92 for SPF G = 0.42; C_sp = 0.93 for Hem-Fir G = 0.43)."
+"3. Apparent diaphragm shear stiffness values, Ga (kips/in.), are based on nail slip in framing with moisture content <= 19% at time of fabrication and panel shear stiffness values for structural sheathing (OSB = Oriented Strand Board; PLY = 3-ply plywood for nominal thickness <= 3/8 in., 4-ply or 5-ply plywood for nominal thickness >= 7/16 in.). When 4-ply or 5-ply plywood is used for 3/8 in. nominal thickness, increase Ga PLY values by 2.0 kips/in."
+4. Space nails maximum 12 in. o.c. along intermediate framing members (6 in. o.c. when support spacing is 48 in. o.c. or greater).
+5. Fastener spacing is indicated as: [Diaphragm boundary and continuous panel edges parallel to load / Other panel edges]. Blocking is required at all unsupported panel edges. Maximum diaphragm aspect ratio L/W = 4:1 per SDPWS Table 4.2.4.
+6. Minimum nominal width of 3 in. framing at adjoining panel edges and boundaries is required where 10d common nails are spaced at 2 in. or 2-1/2 in. o.c.
+7. Deflection of blocked wood structural panel diaphragms (in.) is calculated per SDPWS Eq. 4.2-1: delta_dia = (5 * v * L^3) / (8 * E * A * W) + (0.25 * v * L) / (1000 * Ga) + sum(Delta_c * x) / (2 * W).

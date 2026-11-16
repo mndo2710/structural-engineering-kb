@@ -1,0 +1,30 @@
+﻿Design Method,Section Reference,Combo ID,Load Combination Equation,Primary Variable Action,Horizontal Seismic Term (Eh or Emh),Vertical Seismic Term (Ev),Notes / Applicable Exceptions
+LRFD (Strength Design),2.3.1,LRFD-1,1.4D,Dead Only (D),0,0,Basic Combination 1
+LRFD (Strength Design),2.3.1,LRFD-2,1.2D + 1.6L + 0.5(Lr or S or R),Live (L),0,0,Basic Combination 2 [a]
+LRFD (Strength Design),2.3.1,LRFD-3a,1.2D + 1.6(Lr or S or R) + (1.0L or 0.5W),Roof Live / Snow / Rain (Lr/S/R) with L,0,0,Basic Combination 3 with Live Load [a]
+LRFD (Strength Design),2.3.1,LRFD-3b,1.2D + 1.6(Lr or S or R) + 0.5W,Roof Live / Snow / Rain (Lr/S/R) with W,0,0,Basic Combination 3 with Wind Load
+LRFD (Strength Design),2.3.1,LRFD-4,1.2D + 1.0W + 1.0L + 0.5(Lr or S or R),Wind Downward / Additive (W),0,0,Basic Combination 4 [a]
+LRFD (Strength Design),2.3.1,LRFD-5,0.9D + 1.0W,Wind Uplift / Overturning (W),0,0,Basic Combination 5 (Counteracting Dead Load)
+LRFD (Strength Design),2.3.6,LRFD-6,(1.2 + 0.2*SDS)D + rho*QE + 1.0L + 0.2S,Seismic Additive (E = Eh + Ev),Eh = rho*QE,+0.2*SDS*D,"Basic Seismic Combination 6 [a], [b], [d]"
+LRFD (Strength Design),2.3.6,LRFD-7,(0.9 - 0.2*SDS)D + rho*QE,Seismic Uplift / Overturning (E = Eh - Ev),Eh = rho*QE,-0.2*SDS*D,"Basic Seismic Combination 7 [b], [d]"
+LRFD (Strength Design - Overstrength),2.3.6,LRFD-6-Om,(1.2 + 0.2*SDS)D + Omega_0*QE + 1.0L + 0.2S,Seismic Overstrength Additive (Em = Emh + Ev),Emh = Omega_0*QE,+0.2*SDS*D,"Overstrength Seismic Combination 6 [a], [c], [d]"
+LRFD (Strength Design - Overstrength),2.3.6,LRFD-7-Om,(0.9 - 0.2*SDS)D + Omega_0*QE,Seismic Overstrength Uplift (Em = Emh - Ev),Emh = Omega_0*QE,-0.2*SDS*D,"Overstrength Seismic Combination 7 [c], [d]"
+ASD (Allowable Stress Design),2.4.1,ASD-1,1.0D,Dead Only (D),0,0,Basic Combination 1
+ASD (Allowable Stress Design),2.4.1,ASD-2,1.0D + 1.0L,Live (L),0,0,Basic Combination 2
+ASD (Allowable Stress Design),2.4.1,ASD-3,1.0D + (Lr or S or R),Roof Live / Snow / Rain (Lr/S/R),0,0,Basic Combination 3
+ASD (Allowable Stress Design),2.4.1,ASD-4,1.0D + 0.75L + 0.75(Lr or S or R),Combined Live + Roof Live/Snow/Rain,0,0,Basic Combination 4
+ASD (Allowable Stress Design),2.4.1,ASD-5,1.0D + 0.6W,Wind Only (W),0,0,Basic Combination 5
+ASD (Allowable Stress Design),2.4.1,ASD-6,1.0D + 0.75L + 0.75(0.6W) + 0.75(Lr or S or R),Combined Live + Wind + Roof Live/Snow/Rain,0,0,Basic Combination 6 (0.75*0.6W = 0.45W)
+ASD (Allowable Stress Design),2.4.1,ASD-7,0.6D + 0.6W,Wind Uplift / Overturning (W),0,0,Basic Combination 7 (Counteracting Dead Load)
+ASD (Allowable Stress Design),2.4.5,ASD-8,(1.0 + 0.14*SDS)D + 0.7*rho*QE,Seismic Only (0.7E),0.7*Eh = 0.7*rho*QE,+0.14*SDS*D,"Basic Seismic Combination 8 (0.7*0.2*SDS = 0.14*SDS) [b], [d]"
+ASD (Allowable Stress Design),2.4.5,ASD-9,(1.0 + 0.105*SDS)D + 0.75L + 0.525*rho*QE + 0.75S,Combined Live + Seismic + Snow (0.75*0.7E),0.525*Eh = 0.525*rho*QE,+0.105*SDS*D,"Basic Seismic Combination 9 (0.75*0.7E = 0.525E) [b], [d]"
+ASD (Allowable Stress Design),2.4.5,ASD-10,(0.6 - 0.14*SDS)D + 0.7*rho*QE,Seismic Uplift / Overturning (0.7E),0.7*Eh = 0.7*rho*QE,-0.14*SDS*D,"Basic Seismic Combination 10 [b], [d]"
+ASD (Allowable Stress Design - Overstrength),2.4.5,ASD-8-Om,(1.0 + 0.14*SDS)D + 0.7*Omega_0*QE,Seismic Overstrength Only (0.7Em),0.7*Emh = 0.7*Omega_0*QE,+0.14*SDS*D,"Overstrength Seismic Combination 8 [c], [d]"
+ASD (Allowable Stress Design - Overstrength),2.4.5,ASD-9-Om,(1.0 + 0.105*SDS)D + 0.75L + 0.525*Omega_0*QE + 0.75S,Seismic Overstrength + Live + Snow (0.75*0.7Em),0.525*Emh = 0.525*Omega_0*QE,+0.105*SDS*D,"Overstrength Seismic Combination 9 [c], [d]"
+ASD (Allowable Stress Design - Overstrength),2.4.5,ASD-10-Om,(0.6 - 0.14*SDS)D + 0.7*Omega_0*QE,Seismic Overstrength Uplift (0.7Em),0.7*Emh = 0.7*Omega_0*QE,-0.14*SDS*D,"Overstrength Seismic Combination 10 [c], [d]"
+
+"Footnotes & Code Notes (ASCE 7-22 Sections 2.3.1, 2.3.6, 2.4.1, and 2.4.5):"
+"[a] The load factor on L in combinations 3, 4, and 6 is permitted to equal 0.5 for all occupancies in which L0 in Chapter 4, Table 4.3-1, is less than or equal to 100 psf, with the exception of garages or areas occupied as places of public assembly."
+"[b] Where the effect of E is derived from nonstructural component seismic force Fp (ASCE 7-22 Section 13.3.1), replace rho*QE with Fp, where Ev = +/- 0.2*SDS*Wp."
+"[c] Where the seismic load effect with overstrength Em is required for nonstructural anchorage (ASCE 7-22 Section 13.4.2), replace Omega_0*QE with Omega_0p*Fp."
+"[d] In Combinations 7 and 10 (ASD), the vertical seismic load effect Ev is permitted to be taken as zero where SDS <= 0.125."

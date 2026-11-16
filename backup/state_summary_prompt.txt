@@ -1,0 +1,1 @@
+Hãy tóm tắt toàn bộ tiến độ hiện tại dưới dạng gạch đầu dòng ngắn gọn gồm: (1) Mục tiêu cuối cùng, (2) Các quyết định/quy tắc đã chốt, (3) Những gì đã làm xong, (4) Bước tiếp theo cần làm. Bỏ qua mọi giải thích dài dòng.

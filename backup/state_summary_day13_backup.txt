@@ -1,0 +1,79 @@
+================================================================================
+PROJECT STATE SUMMARY: structural-engineering-kb (US Structural Calculation App)
+Last Updated: 2026-11-15 (Completed Day 13: C&C Module Vertical Slice E2E)
+Auto-Update Rule: Update this file every 3 turns to compress context & save tokens.
+================================================================================
+
+1. ARCHITECTURAL BASELINE (`proposed.md` — SAD v1.0 & Approved Fast-Track Plan)
+- Product: Standalone Windows Desktop Structural Engineering Calculation Application.
+- Operation Mode: Cloud-connected (Google Drive raw sync + local cache), 100% offline-capable.
+- AI Integration in V1 Runtime: None (100% deterministic Python calculation engine; Gemini/Antigravity used externally as dev tools only).
+- V1 Initial Scope (SAD Sec. 1 & 8.2):
+  A. Components & Cladding (Parapet, Overhang, Awning/Canopy, Trellis, Guardrail/Handrail, Load Combos & Sub-Assemblies)
+  B. Wood Connections & Lateral (Nails, Screws, Lag Screws, Bolts, Simpson SDS/Hangers/Ties/Holdowns/Post Bases, Shear Walls/Diaphragms)
+  C. Steel Connections (Bolts, Welds, Shear Tab, Single/Double Angle, Base Plates, HSS Connections)
+  D. Concrete & Masonry Anchorage (Cast-in/Post-Installed Concrete Anchors, CMU Out-of-Plane Breakout, Embedded Steel Posts)
+- Tech Stack (SAD Sec. 4.1 & ADR-01..10):
+  * Language & Engine: Python 3.x + NumPy/Pandas (Deterministic ASD & LRFD, never mixed).
+  * Desktop GUI: PySide6 (4-Panel Calculation Workspace: Input, Diagram, Calculation Sheet, Summary; Statuses: PASS, FAIL, REQUIRES REVIEW, INCOMPLETE, INVALID INPUT).
+  * Storage: CSV/Markdown (`database/`, `procedures/`) + `config/reference_manifest.json` (92 SHA-256 verified) + SQLite (`storage/projects/structural_app.sqlite3` with revision tracking).
+  * Exporters: `openpyxl`/`XlsxWriter` (17-col A–Q, Arial 10pt, `vertAlign="baseline"`, `Source_Audit` tab, `Equation -> Substitution -> Result -> Limit -> DCR`) & `ReportLab` (12-section PDF Report built around the 7-section Plan Check layout).
+
+2. CURRENT PROGRESS STATUS
+- [COMPLETED 100%] SAD Phase 1 (Days 1–10 Engineering Knowledge Base):
+  * 66 verified CSV lookup tables (`database/`) and 26 verified 7-section Markdown calculation procedures (`procedures/`) covering 100% of V1 Initial Scope.
+- [COMPLETED 100%] Repository Architecture Synchronization & Cleanup (2026-11-14):
+  * Synchronized all directory structures per SAD Sec. 15 and archived pre-Day-1 drafts into `backup/`.
+- [COMPLETED 100%] Day 11 (Phase 2 – Architecture Foundation Part 1):
+  * Implemented `core/common/`: `calculation_result.py`, `units.py`, `load_combinations.py` (ASCE 7-22 ASD/LRFD, separated), `validation.py`, `exceptions.py`.
+  * Implemented `app/services/knowledge_base_service.py` with in-memory caching, `utf-8-sig` parsing, and SHA-256 audit.
+  * Computed and synced SHA-256 hashes for all 92 reference files (66 CSVs + 26 MDs) into `config/reference_manifest.json` (Verified: 92, Missing: 0, Mismatch: 0).
+- [COMPLETED 100%] Day 12 (Phase 2 – Architecture Foundation Part 2):
+  * Implemented `storage/repositories/project_repository.py` with 8 SQLite tables.
+  * Implemented `app/services/project_service.py` & `app/services/history_service.py` with revision tracking, parameter diffing, and audit logging.
+  * Implemented `gui/widgets/base_workspace.py`, `gui/main_window.py`, and `gui/dialogs/add_calculation_dialog.py`.
+- [COMPLETED 100%] Day 13 (Component Pipeline: C&C Module Vertical Slice E2E):
+  * Implemented `core/asce7/wind/` (`velocity_pressure.py`, `c_and_c_pressure.py`, `parapet.py`, `roof_overhang.py`, `awning.py`, `trellis.py`, `guardrail.py`) and `core/asce7/seismic/seismic_loads.py` supporting both ASD and LRFD.
+  * Implemented `app/services/calculation_service.py` and `app/services/report_service.py`.
+  * Implemented `exporters/excel_builder.py` (17-col A–Q, Arial 10pt, `vertAlign="baseline"`, 3 tabs `Calc_Sheet`, `Database`, `Source_Audit`), `exporters/pdf_builder.py` (12-section ReportLab PDF built around the 7-section Plan Check layout), and `exporters/audit_logger.py`.
+  * Implemented `gui/widgets/cc_workspace.py` (`CCCalculationWorkspace` & `CCDiagramWidget` for all 5 C&C sub-assemblies) and wired into `gui/main_window.py` & `gui/dialogs/add_calculation_dialog.py`.
+  * Verified 61/61 unit, benchmark, regression, and E2E tests (`tests/test_cc_vertical_slice.py`).
+
+3. KEY GOOGLE DRIVE FOLDER & FILE IDs (CACHE FOR ZERO-SEARCH LOOKUP)
+- Reference Library Root (`TCUS`): `1WTG1-B0xZ0GozvfigreJvtLxJI6HnIwQ` (`TCUS/NDS 2024`: `1FOWH4WhSNWjmc-gvuxh2I_uasV537qYk`)
+- App Repo Root (`structural-engineering-kb`): `1tz7tBCDjFtiVpOVvN9MGxpduLx-EA7QO`
+  * Active Root Files:
+    - `proposed.md` (SAD v1.0 — Authoritative Project Baseline; ONLY update Sec. 2.1 with state_summary.txt)
+    - `rules.md` (`1YV019YOt6GxFoGAm0byItpKLtuDIQKAg` — Master Working Rules)
+    - `context_guide.txt` (`1ZCzkgeK0gINvbALFzyzxlyaJoJQhyVEs`)
+    - `main.py` (`1uAdGSTG_ibtcFniYpE4dPw4dY25jcGIR`)
+  * Active Folders in Root:
+    - `config/`: `1diBqCuQ_sjBEndCqNctSMxaUn3FulcO0` (`active_code_registry.json`: `1tne4rixrlwW3qQ0slWxl5TN73bae7EGD`, `reference_manifest.json`: `1sE2I3SD4Y3o9hjjqPsIygqQR9p2SZdPQ`)
+    - `database/`: `1JRyfJmMXhiXrjiZ4NQwhNS2Il4zEjuZC` (66 verified CSVs)
+    - `procedures/`: `1KDHbmqfs4R3rbPvDPziAClQSHwOBGa33` (26 verified MDs)
+    - `core/`: `1-9nKxCr7GbyovVq5cabrVV6c6nIRy3rR`
+      * `common/`: `13tu3_Nmv8KnVyZGY7664hgvcl5xBhFyy`
+      * `asce7/`: `1dmUSm_JmXBdDFjD9MAb02PcXkDQ5S61Q` (`wind/`: `1BAPFXL_OC65FTdhNUVt1NBxo63f6Ss98`, `seismic/`: `1n38qBamCh2mVtpWXnuFvBEHbO7sbJpoR`)
+      * `nds/`: `1Y0k0otOuMWPG0oxIR3zXhf1M-HWciRpS`
+      * `aisc360/`: `1cHbTiyRGeiAiuFX4f-te-JCzpZan8X1i`
+      * `aci318/`: `1qwmaummhPqRCGIbTcsvkFAxuSkPzNpL5`
+      * `tms402/`: `19FxIcxcjPi5UUAFcYT8gaR_A6vnc9-g8`
+    - `app/`: `1I8_FD6KRQX2xYFbvzqY1VlqsXuV1P-S8` (`services/`: `1au6s-udPc84Gmi6jRoKr-YZZrKtA-Xh5`)
+    - `gui/`: `18qkaAMzM-9Ov58HMnFPY0Htza1MRXRM6` (`main_window.py`: `1LrtCsFkzaBiuGWVo6FjtDbpSEqu5H-t-`, `widgets/`: `18w-iZ3SA5boSr02mHX_XrqO3igwZMmAb`, `dialogs/`: `1L3YXbvXwRUl4AaoZTB2XNElgU3DkS7bd`)
+    - `exporters/`: `1ir9fWjvnHNWgnHZ1hU1askTMMlnYKA5V` (`excel_builder.py`: `1-J4SbiDaa8ZY75eeTO7f8_k_dJmEGKKM`, `pdf_builder.py`: `1R-eGouGWZn16Z7vek16kxi3N5RGB2nAi`, `audit_logger.py`: `1jvmdgnGOESSG39JHeuZvano0pHkZH9MP`)
+    - `cloud/`: `1RPGDAibh2iETiEr3nXnfv1wkbkXb5_QQ`
+    - `storage/`: `1Ja4N9WxMHRJtJO79IVKF6FN1epyhwzqs` (`repositories/`: `1SbuOh7AVyUOkEM24QTUVD10nev0fhvKU`)
+    - `tests/`: `18RwvXqjvyaQj6d6qKnw-DMNcFc0nbDIb` (`test_cc_vertical_slice.py`: `15vKl5KEy0yJgiOCUW8LjSa63VegQFF3w`)
+    - `logs/`: `19aH194XYboN5zAJ2_qqWRf2ZLkJ1gh-Z`
+    - `docs/`: `1HWga4hZmRQRw_cVNaTTGDNBMTORKh_Zz`
+    - `backup/`: `168YNvao8onqXfHC-cjcSCWZz0sPnHz7h`
+
+4. COMPONENT PIPELINE ROADMAP (DAY 14 TO DAY 20)
+- [NEXT] Day 14 (Component Pipeline: Wood Connections & Lateral): `core/nds/` (fasteners, bolts, shear walls, diaphragms, Simpson lookups) + Wood Panel + unit tests.
+- [PENDING] Day 15 (Component Pipeline: Steel Connections): `core/aisc360/` (bolts, welds, shear tab, base plate, HSS) + Steel Panel + unit tests.
+- [PENDING] Day 16 (Component Pipeline: Concrete & CMU Anchorage): `core/aci318/` & `core/tms402/` (anchors, CMU breakout, cantilever post) + Anchorage Panel + unit tests.
+- [PENDING] Day 17 (Phase 5: Cloud Synchronization): `CloudSyncService` (Google Drive OAuth 2.0 raw sync, SHA-256 conflict detection, offline cache) + Sync Dialog.
+- [PENDING] Day 18 (Phase 6: Full Engineering Exporters): Finalize 17-col Arial 10pt Excel workbook generator & 12-section ReportLab PDF generator across all modules.
+- [PENDING] Day 19 (Phase 7: Full 5-Level QA & Windows Packaging): Comprehensive pytest suite (Unit, Benchmark, Regression, E2E) + PyInstaller standalone Windows .exe build.
+- [PENDING] Day 20 (Phase 7: Final Polish & Release): End-to-end UAT, performance profiling, documentation update, and V1.0 release sign-off.
+================================================================================

@@ -1,0 +1,28 @@
+﻿Description of Fasteners,Bolt Group / ASTM Specification,Thread Condition in Shear Plane,Nominal Tensile Strength F_nt (ksi) [a],Nominal Shear Strength in Bearing-Type Connections F_nv (ksi) [b],phi (LRFD) [Sec. J3.6],Omega (ASD) [Sec. J3.6],Design Tensile Strength phi*F_nt (ksi),Allowable Tensile Strength F_nt/Omega (ksi),Design Shear Strength phi*F_nv (ksi),Allowable Shear Strength F_nv/Omega (ksi),Source Reference
+A307 bolts,ASTM A307,Threads included or excluded,45,27,0.75,2.0,33.75,22.5,20.25,13.5,ANSI/AISC 360-22 Table J3.2
+Group A (120 ksi tensile) - Threads included (N),"ASTM F3125/F3125M Gr. A325, A325M, F1852, A354 Gr. BC, A449",Threads not excluded from shear planes (N),90,54,0.75,2.0,67.5,45.0,40.5,27.0,ANSI/AISC 360-22 Table J3.2
+Group A (120 ksi tensile) - Threads excluded (X),"ASTM F3125/F3125M Gr. A325, A325M, F1852, A354 Gr. BC, A449",Threads excluded from shear planes (X),90,68,0.75,2.0,67.5,45.0,51.0,34.0,ANSI/AISC 360-22 Table J3.2
+Group B (150 ksi tensile) - Threads included (N),"ASTM F3125/F3125M Gr. A490, A490M, F2280, A354 Gr. BD",Threads not excluded from shear planes (N),113,68,0.75,2.0,84.75,56.5,51.0,34.0,ANSI/AISC 360-22 Table J3.2
+Group B (150 ksi tensile) - Threads excluded (X),"ASTM F3125/F3125M Gr. A490, A490M, F2280, A354 Gr. BD",Threads excluded from shear planes (X),113,84,0.75,2.0,84.75,56.5,63.0,42.0,ANSI/AISC 360-22 Table J3.2
+Group C (200 ksi tensile) - Threads included (N),"ASTM F3043, ASTM F3111 (1 in. to 1-1/4 in. only)",Threads not excluded from shear planes (N),150,90,0.75,2.0,112.5,75.0,67.5,45.0,ANSI/AISC 360-22 Table J3.2
+Group C (200 ksi tensile) - Threads excluded (X),"ASTM F3043, ASTM F3111 (1 in. to 1-1/4 in. only)",Threads excluded from shear planes (X),150,113,0.75,2.0,112.5,75.0,84.75,56.5,ANSI/AISC 360-22 Table J3.2
+Threaded parts meeting Section A3.4 - Threads included (N),"ASTM A36, A449, A572, F1554 Gr. 36/55/105",Threads not excluded from shear planes (N),0.75 * F_u,0.450 * F_u,0.75,2.0,0.563 * F_u,0.375 * F_u,0.338 * F_u,0.225 * F_u,ANSI/AISC 360-22 Table J3.2
+Threaded parts meeting Section A3.4 - Threads excluded (X),"ASTM A36, A449, A572, F1554 Gr. 36/55/105",Threads excluded from shear planes (X),0.75 * F_u,0.563 * F_u,0.75,2.0,0.563 * F_u,0.375 * F_u,0.422 * F_u,0.281 * F_u,ANSI/AISC 360-22 Table J3.2
+
+Supplemental Table J3.1 & Section J3.8 - Minimum Bolt Pretension T_b (kips) and Slip-Critical Parameters:
+Bolt Size (in.),Nominal Bolt Area A_b (in.^2),Group A Min Pretension T_b (kips) [Table J3.1],Group B Min Pretension T_b (kips) [Table J3.1],Group C Min Pretension T_b (kips) [Table J3.1],Slip-Critical Class A (mu = 0.30),Slip-Critical Class B (mu = 0.50),Hole Factor h_f (Sec. J3.8),D_u Multiplier
+1/2,0.196,12,15,N/A,mu = 0.30 (unpainted clean mill scale),mu = 0.50 (blast-cleaned or Class B coating),"1.00 (STD), 0.85 (OVS/SSL), 0.70 (LSL)",1.13
+5/8,0.307,19,24,N/A,mu = 0.30,mu = 0.50,"1.00 (STD), 0.85 (OVS/SSL), 0.70 (LSL)",1.13
+3/4,0.442,28,35,N/A,mu = 0.30,mu = 0.50,"1.00 (STD), 0.85 (OVS/SSL), 0.70 (LSL)",1.13
+7/8,0.601,39,49,N/A,mu = 0.30,mu = 0.50,"1.00 (STD), 0.85 (OVS/SSL), 0.70 (LSL)",1.13
+1,0.785,51,64,90,mu = 0.30,mu = 0.50,"1.00 (STD), 0.85 (OVS/SSL), 0.70 (LSL)",1.13
+1-1/8,0.994,56,80,113,mu = 0.30,mu = 0.50,"1.00 (STD), 0.85 (OVS/SSL), 0.70 (LSL)",1.13
+1-1/4,1.227,71,102,143,mu = 0.30,mu = 0.50,"1.00 (STD), 0.85 (OVS/SSL), 0.70 (LSL)",1.13
+1-3/8,1.485,85,121,N/A,mu = 0.30,mu = 0.50,"1.00 (STD), 0.85 (OVS/SSL), 0.70 (LSL)",1.13
+1-1/2,1.767,103,148,N/A,mu = 0.30,mu = 0.50,"1.00 (STD), 0.85 (OVS/SSL), 0.70 (LSL)",1.13
+
+Notes and Footnotes (ANSI/AISC 360-22 Table J3.2 & Table J3.1):
+"[a] For high-strength bolts subject to tensile fatigue loading, see Appendix 3."
+"[b] For end-loaded connections with a fastener pattern length greater than 38 in., F_nv shall be reduced to 83.3% of the tabulated values."
+"Note 1: Nominal shear strength F_nv for Group A/B/C applies to bearing-type connections. For combined tension and shear in bearing-type connections (Sec. J3.7), F'_nt = 1.3 * F_nt - (F_nt / (phi*F_nv)) * f_rv <= F_nt (LRFD) or F'_nt = 1.3 * F_nt - (Omega * F_nt / F_nv) * f_rv <= F_nt (ASD)."
+"Note 2: Slip-critical nominal slip resistance (Sec. J3.8): R_n = mu * D_u * h_f * T_b * n_s, where phi = 1.00 (LRFD) / Omega = 1.50 (ASD) for standard/short-slotted holes perpendicular to load; phi = 0.85 / Omega = 1.76 for oversized/short-slotted parallel to load; phi = 0.70 / Omega = 2.14 for long-slotted holes."

@@ -1,0 +1,26 @@
+﻿Figure Reference,Surface / Design Condition,Loading Direction,Height Ratio (hc / he),GCp (Effective Wind Area A <= 10 sq ft),GCp (Effective Wind Area A = 20 sq ft),GCp (Effective Wind Area A = 50 sq ft),GCp (Effective Wind Area A >= 100 sq ft),GCp (Effective Wind Area A >= 500 sq ft),Log-Linear Interpolation Formula (10 < A < A_max)
+Figure 30.11-1A,Upper Surface Only (Decking/Sheathing),Positive (Downward),All hc/he <= 0.90,+0.80,+0.71,+0.59,+0.50,+0.50,GCp = 1.10 - 0.30*log10(A) for 10 <= A <= 100
+Figure 30.11-1A,Upper Surface Only (Decking/Sheathing),Negative (Upward),hc/he < 0.5,-1.50,-1.36,-1.18,-1.05,-0.70,GCp = -1.97 + 0.47*log10(A) for 10 <= A <= 500
+Figure 30.11-1A,Upper Surface Only (Decking/Sheathing),Negative (Upward),hc/he = 0.5,-1.50,-1.36,-1.18,-1.05,-0.70,GCp = -1.97 + 0.47*log10(A) for 10 <= A <= 500
+Figure 30.11-1A,Upper Surface Only (Decking/Sheathing),Negative (Upward),hc/he = 0.7,-1.90,-1.69,-1.41,-1.20,-0.70,GCp = -2.61 + 0.71*log10(A) for 10 <= A <= 500
+Figure 30.11-1A,Upper Surface Only (Decking/Sheathing),Negative (Upward),hc/he >= 0.9,-2.20,-1.94,-1.59,-1.32,-0.70,GCp = -3.08 + 0.88*log10(A) for 10 <= A <= 500
+Figure 30.11-1A,Lower Surface Only (Soffit/Fascia),Positive (Upward on Soffit),hc/he < 0.5,+0.80,+0.71,+0.59,+0.50,+0.50,GCp = 1.10 - 0.30*log10(A) for 10 <= A <= 100
+Figure 30.11-1A,Lower Surface Only (Soffit/Fascia),Positive (Upward on Soffit),hc/he >= 0.5,+0.70,+0.64,+0.56,+0.50,+0.50,GCp = 0.90 - 0.20*log10(A) for 10 <= A <= 100
+Figure 30.11-1A,Lower Surface Only (Soffit/Fascia),Negative (Downward Suction on Soffit),hc/he < 0.5,-1.50,-1.32,-1.09,-0.91,-0.50,GCp = -2.09 + 0.59*log10(A) for 10 <= A <= 500
+Figure 30.11-1A,Lower Surface Only (Soffit/Fascia),Negative (Downward Suction on Soffit),hc/he = 0.6,-1.20,-1.08,-0.91,-0.79,-0.50,GCp = -1.61 + 0.41*log10(A) for 10 <= A <= 500
+Figure 30.11-1A,Lower Surface Only (Soffit/Fascia),Negative (Downward Suction on Soffit),hc/he >= 0.8,-0.90,-0.83,-0.74,-0.66,-0.50,GCp = -1.14 + 0.24*log10(A) for 10 <= A <= 500
+Figure 30.11-1B,"Net Combined (Upper + Lower Surfaces, Framing/Joists/Brackets)",Positive Net (Downward),hc/he < 0.5,+1.40,+1.26,+1.08,+0.95,+0.60,GCp = 1.87 - 0.47*log10(A) for 10 <= A <= 500
+Figure 30.11-1B,"Net Combined (Upper + Lower Surfaces, Framing/Joists/Brackets)",Positive Net (Downward),hc/he = 0.6,+1.20,+1.09,+0.95,+0.85,+0.60,GCp = 1.55 - 0.35*log10(A) for 10 <= A <= 500
+Figure 30.11-1B,"Net Combined (Upper + Lower Surfaces, Framing/Joists/Brackets)",Positive Net (Downward),hc/he >= 0.8,+1.10,+1.01,+0.90,+0.81,+0.60,GCp = 1.39 - 0.29*log10(A) for 10 <= A <= 500
+Figure 30.11-1B,"Net Combined (Upper + Lower Surfaces, Framing/Joists/Brackets)",Negative Net (Upward Uplift),hc/he < 0.5,-1.50,-1.36,-1.18,-1.05,-0.70,GCp = -1.97 + 0.47*log10(A) for 10 <= A <= 500
+Figure 30.11-1B,"Net Combined (Upper + Lower Surfaces, Framing/Joists/Brackets)",Negative Net (Upward Uplift),hc/he = 0.5,-1.70,-1.56,-1.38,-1.25,-0.90,GCp = -2.17 + 0.47*log10(A) for 10 <= A <= 500
+Figure 30.11-1B,"Net Combined (Upper + Lower Surfaces, Framing/Joists/Brackets)",Negative Net (Upward Uplift),hc/he = 0.7,-2.20,-1.99,-1.71,-1.50,-1.00,GCp = -2.91 + 0.71*log10(A) for 10 <= A <= 500
+Figure 30.11-1B,"Net Combined (Upper + Lower Surfaces, Framing/Joists/Brackets)",Negative Net (Upward Uplift),hc/he >= 0.9,-2.40,-2.17,-1.87,-1.64,-1.10,GCp = -3.17 + 0.76*log10(A) for 10 <= A <= 500
+
+"Footnotes & Design Notes (ASCE 7-22 Section 30.11, Figures 30.11-1A and 30.11-1B):"
+"[1] Design Wind Pressure Equation (Eq. 30.11-1): p = qh * Kd * (GCp) (psf), where qh is evaluated at mean roof height h of the main building and Kd = 0.85."
+"[2] Applicability: Attached canopies on walls of buildings with mean roof height h <= 60 ft (18.3 m), canopy height hc < 0.90*he, and canopy maximum slope theta <= 10 degrees."
+[3] Notation: hc = height of canopy above ground; he = eaves height of the building (or mean roof height h if flat roof); A = effective wind area (sq ft).
+"[4] Figure 30.11-1A applies to separate upper or lower surface sheathing/fasteners (e.g., top decking vs. bottom soffit panels)."
+"[5] Figure 30.11-1B applies to combined net pressures acting across both upper and lower surfaces for structural canopy framing, outlooker beams, brackets, tie-back rods, and wall ledger connections."
+[6] Linear interpolation is permitted for intermediate values of hc/he.

@@ -1,0 +1,65 @@
+# STRUCTURAL ENGINEERING KNOWLEDGE BASE - ROLLING STATE SUMMARY
+Last Updated: 2026-11-13 (End of Day 8 Execution)
+Root Folder ID: 1tz7tBCDjFtiVpOVvN9MGxpduLx-EA7QO (https://drive.google.com/open?id=1tz7tBCDjFtiVpOVvN9MGxpduLx-EA7QO&usp=drive_fs)
+GitHub Target: mndo2710/structural-engineering-kb
+
+================================================================================
+1. COMPLETED MILESTONES (DAYS 1 - 8)
+================================================================================
+- [DONE] Day 1: Folder Architecture Setup & ASCE 7-22 Gravity Loads (Dead, Live, Roof Live).
+- [DONE] Day 2: ASCE 7-22 Wind (Ch. 26-30) & Seismic (Ch. 11-13, 15) Databases + Procedures.
+- [DONE] Day 3: NDS 2024 Wood Member Design (Sawn Lumber, Glulam, SCL) & Adjustment Factors.
+- [DONE] Day 4: NDS 2024 Wood Connections (Bolts, Lag Screws, Wood Screws, Nails) Databases + Procedures.
+- [DONE] Day 5: Wood Lateral Design (SDPWS 2021 Diaphragms & Shear Walls) + Official Simpson Strong-Tie C-C-2026 Catalogs & Workflows:
+  * CSVs in `database/nds_wood/v2024/sdpws/` (`1Xb9aR189G5C3kcSg_6XdvpwBtrxt50Qd`):
+    - `SDPWS-2021_Table_4.2A_Blocked_Diaphragms.csv` (`1W2IjR446w5qDVqco6Oc4AD5DBXaBydNo`)
+    - `SDPWS-2021_Table_4.2C_Unblocked_Diaphragms.csv` (`1jPQqz1yMUQHFwI0B-GY3bLkZ43dX7Cnv`)
+    - `SDPWS-2021_Table_4.3A_Shear_Walls.csv` (`1fh2qRWznGVrg1IYhG5AiKOfOXw6Vl7JJ`)
+  * CSVs in `database/manufacturer_catalogs/simpson_strong_tie/` (`1ZFeYwdVJs9uU2gdGnni0HpKh7qrDDq-w`):
+    - `Simpson_C-C-2026_Straps_CS_CMST_LSTA_MSTA_MSTC_MST.csv` (`1_6PMohvvICwr2KH6euPFMmaongEV5J9L`)
+    - `Simpson_C-C-2026_Hurricane_Ties_and_Lateral_Plates_H_LTP_A35.csv` (`1R7wcSr3wRU7RanpkdQxWcQ0NdD3zc_uv`)
+    - `Simpson_C-C-2026_Holdowns_HDU_HDUE_DTT.csv` (`1Uvryqp21UOatMK_My63fF0U7C9UjCP70`)
+    - `Simpson_C-C-2026_Joist_Hangers_LUS_HU_HUS_HUCQ_HGUS.csv` (`1czEL0fJofQakbv6mev2WncSJQXYHeWCE`)
+  * Procedures in `procedures/02_wood_design/` (`1LF3Bo3wcPPC4VQ-gg6yOnonXFfVR9Vlp`):
+    - `wood_diaphragm_chord_collector_sdpws_workflow.md` (`1VCpbEM474UA__uFchU7u3Ke3T0PwgA20`)
+    - `wood_shear_wall_holdown_sdpws_workflow.md` (`1GhDi_4xP-oAxSqud1JKJUjwB3pKA8TnL`)
+    - `wood_joist_hanger_hurricane_tie_simpson_workflow.md` (`1AsBEJP86FlupkkmZxkEUBJ7-7CdZpfqT`)
+
+- [DONE] Day 6: Steel Connections Part 1 (AISC 360-22 Chapter J Bolts, Welds & AISC Design Guide 1 Base Plates):
+  * CSVs in `database/aisc_360/ch_j_connections/` (`1RNJmnDYJsyHXEAJknmmPWUPjk8q1LqTE`):
+    - `AISC360-22_Table_J2.5_Welded_Joints.csv` (`1kYlcW83kevY3Q8Br7NME90YDEY-_P9e9`)
+    - `AISC360-22_Table_J3.2_Bolt_Strength.csv` (`1WjB20ItW4jzPwm3A_CcfFbt0UFfgymap`)
+    - `AISC360-22_Table_J3.3_J3.4_J3.5_Bolt_Holes_and_Edge_Distances.csv` (`1tSndb0vew_bLNszw9tMhaTft_JZgrnjV`)
+    - `AISC_DG1_Base_Plate_and_Anchor_Rod_Design.csv` (`1TV7TNolvMh9EqC0dvb6yaYDDsfdVi3wp`)
+  * Procedures in `procedures/03_steel_design/` (`1DKyoPc6B1L1f-Kqh1vOHwJYxvvksAXvQ`):
+    - `steel_bolted_connection_aisc_workflow.md` (`1HzmobpIsM-xzG5ZkTIPBVwnONukTJG-t`)
+    - `steel_welded_connection_aisc_workflow.md` (`1MK2en0wVqBDdMuSyQIiesPDccuVTZfz5`)
+    - `steel_column_base_plate_aisc_dg1_workflow.md` (`1Yjrk4woap1RVbCC7xF-UA2qok9AAG3b2`)
+
+- [DONE] Day 7: Steel Connections Part 2 (AISC Manual Part 10 Shear Tabs, Single/Double Angles, Part 7 Eccentric Bolt Groups & AISC 360 Ch. K HSS Connections):
+  * CSVs in `database/aisc_360/ch_j_connections/` (`1RNJmnDYJsyHXEAJknmmPWUPjk8q1LqTE`):
+    - `AISC_Manual_16th_Part10_Shear_Tab_and_Single_Angle_Design.csv` (`1HlszrCT5nu0-55MWtCg1QnCI6Me7oFxm`)
+    - `AISC360-22_Table_K3.2_K4.2_HSS_Connections.csv` (`1CnJAhhGHwBM_Wg-G_d1Feo7rr_jeJC2G`)
+    - `AISC_Manual_16th_Part7_Eccentric_Bolt_C_Coefficients.csv` (`1UhcS_ad-Nh9ZxP_abAii9JSIztoQhk0m`)
+  * Procedures in `procedures/03_steel_design/` (`1DKyoPc6B1L1f-Kqh1vOHwJYxvvksAXvQ`):
+    - `steel_shear_tab_connection_aisc_workflow.md` (`1SZscOsnn5H5xoAYk5ZSuW8I25WqQcHy1`)
+    - `steel_single_double_angle_shear_aisc_workflow.md` (`1WnffiBoVjt6sBq4IuvqIfBKPVT30PRJI`)
+    - `steel_hss_to_hss_moment_shear_aisc_workflow.md` (`17z-Sr2ArO2qi4jDyZrPQNHXEyNR2AP2d`)
+
+- [DONE] Day 8: Concrete & CMU Anchorage (ACI 318-19/25 Ch. 17 Cast-in/Post-Installed Anchors, TMS 402-22 CMU Out-of-Plane Breakout & Embedded Post):
+  * CSVs in `database/aci_318_tms_402/aci_318_19/` (`12f3sJBCH_R1nQKREAlWMeMHEcvBxwkFk`):
+    - `ACI318-19_Ch17_Anchor_Limit_States_and_Factors.csv` (`1tTCovRSh95AI64R_qsFbQmNU21Rv8S7X`)
+    - `ASTM_F1554_and_Headed_Anchor_Bolt_Properties.csv` (`1poWhFwgsvNHv5qNAHM1gVvtO0N38zqe4`)
+  * CSV in `database/aci_318_tms_402/tms_402_22/` (`1-qchxSzDOmUTCv4-f4jJuw6DZKghSPKf`):
+    - `TMS402-22_Masonry_Anchor_Bolts_and_CMU_Properties.csv` (`1EmZCtY2CT8tiMxV9nUzP4STBU_ynZkFT`)
+  * CSV in `database/manufacturer_catalogs/simpson_strong_tie/` (`1ZFeYwdVJs9uU2gdGnni0HpKh7qrDDq-w`):
+    - `Simpson_C-A-2023_Titen_HD_SET3G_PAB_Anchors.csv` (`1j4bvrizdB23muXAM3mNe_0eje_gLuFcA`)
+  * Procedures in `procedures/04_concrete_masonry_foundation/` (`19TqDxKRM_Inqp7ONpX2D_TLB_QMvo6OG`):
+    - `concrete_anchorage_aci318_ch17_workflow.md`
+    - `cmu_masonry_anchorage_out_of_plane_breakout_tms402_workflow.md`
+    - `cantilever_steel_post_embedded_concrete_cmu_workflow.md`
+
+================================================================================
+2. UPCOMING ROADMAP (DAYS 9 - 10)
+================================================================================
+- [NEXT] Days 9 - 10: End-to-End Sub-Assembly Synthesis Procedures in `06_components_and_cladding/` (`1LQXqhYmZjV0hw8h1TEiJnDHOzxZfXuHN`) & `05_plan_check_responses/` (`1ecvnjT4cqbCfoURXqaWH5SGyv0ahVAhx`) (Trellis/Patio Cover, Cantilever Steel Guardrail/Trellis Rail, Equipment Anchorage, Wood Ledger-to-CMU/Concrete Wall Out-of-Plane Pullout, and Plan Check Response Templates).

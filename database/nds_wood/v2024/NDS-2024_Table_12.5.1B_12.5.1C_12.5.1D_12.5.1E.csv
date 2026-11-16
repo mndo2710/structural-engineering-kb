@@ -1,0 +1,20 @@
+﻿"NDS 2024 Tables 12.5.1B, 12.5.1C, 12.5.1D, and 12.5.1E – Dowel-Type Fastener Spacing and Edge Distance Requirements (D >= 1/4"")"
+Table Reference,Direction of Loading / Orientation,Condition / Slenderness Ratio (l/D),Minimum Requirement (C_Delta = 0.5 or Absolute Min),Requirement for Full Design Value (C_Delta = 1.0),Applicable Notes
+Table 12.5.1B (Spacing in a Row),Parallel to Grain,All l/D,3D,4D,C_Delta = actual spacing / (min spacing for C_Delta = 1.0)
+Table 12.5.1B (Spacing in a Row),Perpendicular to Grain,All l/D,3D,Required spacing for attached members,C_Delta = actual spacing / (min spacing for C_Delta = 1.0)
+"Table 12.5.1C (Edge Distance) [1],[2]",Parallel to Grain,l/D <= 6,1.5D,1.5D,See Footnote [1] for l/D definition
+"Table 12.5.1C (Edge Distance) [1],[2]",Parallel to Grain,l/D > 6,"1.5D or 1/2 spacing between rows, whichever is greater","1.5D or 1/2 spacing between rows, whichever is greater",See Footnote [1] for l/D definition
+"Table 12.5.1C (Edge Distance) [1],[2]",Perpendicular to Grain [2],Loaded Edge,4D,4D,See Footnote [2] for suspended loads
+"Table 12.5.1C (Edge Distance) [1],[2]",Perpendicular to Grain [2],Unloaded Edge,1.5D,1.5D,Edge opposite the loaded edge
+Table 12.5.1D (Spacing Between Rows) [1],Parallel to Grain,All l/D,1.5D,1.5D,"Max distance between outer rows <= 5"" unless special detailing provided (Sec. 12.5.1.3)"
+Table 12.5.1D (Spacing Between Rows) [1],Perpendicular to Grain,l/D <= 2,2.5D,2.5D,See Footnote [1] for l/D definition
+Table 12.5.1D (Spacing Between Rows) [1],Perpendicular to Grain,2 < l/D < 6,(5*l + 10*D) / 8,(5*l + 10*D) / 8,Linear interpolation between 2.5D and 5D
+Table 12.5.1D (Spacing Between Rows) [1],Perpendicular to Grain,l/D >= 6,5D,5D,"Max distance between outer rows <= 5"" unless special detailing provided"
+Table 12.5.1E (Lag Screws in Withdrawal Only),Edge Distance,Not loaded laterally,1.5D,1.5D,Applies to lag screws loaded in withdrawal and not loaded laterally
+Table 12.5.1E (Lag Screws in Withdrawal Only),End Distance,Not loaded laterally,4D,4D,Applies to lag screws loaded in withdrawal and not loaded laterally
+Table 12.5.1E (Lag Screws in Withdrawal Only),Spacing,Not loaded laterally,4D,4D,Applies to lag screws loaded in withdrawal and not loaded laterally
+"Section 12.5.1.1 (Fasteners with D < 1/4"")","Nails and Wood Screws (D < 1/4"")",All directions,Prevent splitting of wood,Prevent splitting of wood,Standard practice / NDS Commentary C12.5.1: End distance >= 15D (no predrill) or 10D (predrilled); Edge distance >= 2.5D; Spacing in row >= 15D (no predrill) or 10D (predrilled); Row spacing >= 5D (no predrill) or 3D (predrilled)
+
+Footnotes:
+[1],"The l/D ratio used to determine the minimum edge distance and spacing between rows shall be the lesser of: (a) length of fastener in wood main member / D = l_m / D, or (b) total length of fastener in wood side member(s) / D = l_s / D."
+[2],Heavy or medium concentrated loads shall not be suspended below the neutral axis of a single sawn lumber or structural glued laminated timber beam except where mechanical or equivalent reinforcement is provided to resist tension stresses perpendicular to grain (see 3.8.2 and 11.1.3).

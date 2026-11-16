@@ -1,0 +1,27 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Office temporary files & OS files
+~$*.xlsx
+~$*.docx
+.DS_Store
+Thumbs.db
+
+# Google Drive cloud shortcut/virtual files (cannot be read by Git on Windows)
+*.gdoc
+*.gsheet
+*.gslides
+*.gdraw
+*.gtable
+
+# Runtime logs & temporary database journals
+logs/*.log
+*.sqlite3-journal

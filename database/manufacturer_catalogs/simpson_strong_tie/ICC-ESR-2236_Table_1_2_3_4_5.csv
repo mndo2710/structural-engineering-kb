@@ -1,0 +1,21 @@
+﻿"ICC-ES Evaluation Report ESR-2236 (Reissued January 2026, Revised March 2026 w/ 2026 LABC/LARC Supplement) – Simpson Strong-Drive SDS Heavy-Duty Connector Screws"
+Carbon Steel Model,Stainless Steel Model,Head Marking,Length L (in.),Thread Length L_thread [2] (in.),Unthreaded Shank L - L_thread (in.),Major Dia D (in.),Root Dia D_r (in.),Shank Dia D_s (in.),"F_yb,spec Carbon / SS (psi)",ASD Steel Tension N_a (lbf),ASD Steel Shear V_a (lbf),LRFD Steel Tension N_u (lbf),LRFD Steel Shear V_u (lbf),"Z Steel-to-Wood 16ga (0.0584"") [DF-L G>=0.50] (lbf)","Z Steel-to-Wood 14ga (0.0721"") [DF-L G>=0.50] (lbf)","Z Steel-to-Wood 12ga (0.1026"") [DF-L G>=0.50] (lbf)",Z Steel-to-Wood 10ga/7ga/3ga [DF-L G>=0.50] (lbf),"Z Wood-to-Wood t_s=1-1/2"" [DF-L G>=0.50] (lbf)","Z Wood-to-Wood t_s=1-3/4"" [DF-L G>=0.50] (lbf)",Unit Withdrawal W [DF-L G>=0.50] (lbf/in.),Full-Thread Withdrawal W_tot = W*L_thread [DF-L G>=0.50] (lbf)
+SDS25112 / SDS25112DBB,SDS25112SS,S1.5,1.50,1.00,0.50,0.256,0.188,0.239,172000 / 164000,1430,800,2145,1200,250,250,250,250,N/A,N/A,172,172
+SDS25134,N/A,S1.75,1.75,1.25,0.50,0.256,0.188,0.239,172000 / N/A,1430,800,2145,1200,250,250,250,250,N/A,N/A,172,215
+SDS25200,SDS25200SS,S2,2.00,1.25,0.75,0.256,0.188,0.239,172000 / 164000,1430,800,2145,1200,250,290,290,290,N/A,N/A,172,215
+SDS25212,SDS25212SS,S2.5,2.50,1.50,1.00,0.256,0.188,0.239,172000 / 164000,1430,800,2145,1200,250,390,390,420,190,N/A,172,258
+SDS25300,SDS25300SS,S3,3.00,2.00,1.00,0.256,0.188,0.239,172000 / 164000,1430,800,2145,1200,250,420,420,420,280,N/A,172,344
+SDS25312,SDS25312SS,S3.5,3.50,2.25,1.25,0.256,0.188,0.239,172000 / 164000,1430,800,2145,1200,250,420,420,420,340,340,172,387
+SDS25412,N/A,S4.5,4.50,2.75,1.75,0.256,0.188,0.239,172000 / N/A,1430,800,2145,1200,250,420,420,420,350,340,172,473
+SDS25500,N/A,S5,5.00,2.75,2.25,0.256,0.188,0.239,172000 / N/A,1430,800,2145,1200,250,420,420,420,350,340,172,473
+SDS25600,N/A,S6,6.00,3.25,2.75,0.256,0.188,0.239,172000 / N/A,1430,800,2145,1200,250,420,420,420,350,340,172,559
+SDS25800,N/A,S8,8.00,3.25,4.75,0.256,0.188,0.239,172000 / N/A,1430,800,2145,1200,250,420,420,420,350,340,172,559
+
+"Footnotes & Geometry Requirements (ICC-ES ESR-2236 Tables 1, 2, 3, 4A, 4B, and 5):"
+[1],Head diameter (integral washer) D_H = 0.500 in.; 3/8-in. hex drive; tip length L_tip = 0.334 in. (Type 17 drill point). Installed without predrilling.
+[2],"Length of thread L_thread includes the tip. For NDS withdrawal calculations (Section 4.1.3), SDS screws are classified as a No. 14 wood screw (W = 172 lbf/in. for G = 0.50 DF-L; W = 121 lbf/in. for G = 0.42 SPF)."
+[3],"Table 2 (Steel-to-Wood): Side member must be steel with Fu >= 45 ksi for 16 ga (0.0584 in.) to 7 ga (0.1795 in.) and Fu >= 52 ksi for 3 ga (0.2405 in.). Main wood member must have SG_NDS >= 0.50 (e.g., Douglas Fir-Larch or Southern Pine) or SCL with SG_eq >= 0.50, and thickness t_m >= L - t_s,s."
+[4],"Table 3 (Wood-to-Wood): Wood side member actual thickness t_s,w must be 1-1/2 in. or 1-3/4 in., and main wood member thickness t_m >= L - t_s,w with SG_NDS >= 0.50."
+[5],Table 4A (Connection Geometry for Tested Values in Tables 2 & 3): Edge distance = 1-1/2 in. (perp to grain) or 1 in. (parallel to grain); End distance = 4 in. (perp) or 3 in. (parallel); Spacing in a row = 3 in.; Spacing between rows = 3 in. (1-1/2 in. for staggered rows).
+[6],"Table 4B (Connection Geometry for NDS Yield Limit Calculations per Sec. 4.1.5 & 4.1.6): Use D_r = 0.188 in. in NDS Tables 12.3.1A/B and 12.3.3, L_m = p - 0.5*L_tip, and F_e,steel = 1.375*F_u. For SG_NDS >= 0.50: Edge = 1-1/2 in. (perp) / 1 in. (par); End = 3-3/4 in. (perp) / 3 in. (par); Spacing in row = 1-3/4 in. (perp) / 3 in. (par); Row spacing = 2-1/2 in. (perp) / 1-3/4 in. (par)."
+[7],"Section 5.3 Condition of Use: When connection capacity is controlled by fastener steel strength (N_a, V_a, N_u, V_u) or metal side plate strength rather than wood strength, the allowable strength shall NOT be multiplied by NDS adjustment factors (such as C_D)."

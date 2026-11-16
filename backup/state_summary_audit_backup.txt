@@ -1,0 +1,92 @@
+================================================================================
+PROJECT STATE SUMMARY: structural-engineering-kb (US Structural Calculation App)
+Last Updated: 2026-11-14 (Post-Day 10 Audit & Next 10-Day Roadmap Planning)
+Auto-Update Rule: Update this file every 3 turns to compress context & save tokens.
+================================================================================
+
+1. FINAL GOAL
+- [COMPLETED] Phase 1 (Days 1-10): Foundational code lookup CSVs (`database/`) and connection/C&C calculation procedures (`procedures/`).
+- [NEXT] Phase 1.5 (Days 11-13): Fill identified Member Design, Foundation/Retaining Wall, and Global Load gaps in `database/` and `procedures/`.
+- [NEXT] Phase 2 (Days 14-20): Implement standalone Python desktop app (`core/`, `exporters/`, `gui/`, `tests/`) with standardized 17-column Arial 10pt Excel output + `Source_Audit` tab.
+
+2. AUDIT FINDINGS (2026-11-14): REMAINING GAPS IN `database/` & `procedures/`
+A. Missing CSV Lookup Tables (`database/`):
+- `asce_7/v7_22/`:
+  1. `ASCE7-22_Table_1.5-1_1.5-2_Risk_Categories_Importance_Factors.csv`
+  2. `ASCE7-22_Table_26.11-1_and_Sec_26.8_Exposure_Topographic_Kzt.csv`
+  3. `ASCE7-22_Ch7_Snow_Loads_Factors.csv`
+  4. `ASCE7-22_Ch27_28_MWFRS_Wind_Coefficients.csv`
+- `ibc_cbc/v2024_ibc_v2025_cbc/`:
+  5. `IBC-2024_Table_1604.3_Deflection_Limits.csv`
+  6. `IBC-2024_Table_1806.2_Presumptive_Soil_Bearing_and_Lateral_Pressures.csv`
+  7. `IBC-2024_Ch17_Special_Inspection_Thresholds.csv`
+- `nds_wood/v2024/`:
+  8. `NDS-2024_Supplement_Table_4B_Southern_Pine_and_4D_Timbers.csv`
+  9. `NDS-2024_Supplement_Table_5A_Glulam_Design_Values.csv`
+  10. `NDS-2024_SCL_LVL_PSL_LSL_Design_Values.csv`
+  11. `NDS-2024_Sec_3.3_3.7_Beam_Column_Stability_CL_CP.csv`
+- `aisc_360/`:
+  12. `AISC360-22_Table_B4.1a_B4.1b_Width_to_Thickness_Compactness.csv`
+  13. `AISC360-22_ChE_ChF_ChG_Member_Design_Factors.csv`
+- `aci_318_tms_402/`:
+  14. `ACI318-19_Table_21.2.1_21.2.2_Strength_Reduction_Factors_Phi.csv`
+  15. `ACI318-19_Sec_25.4_Rebar_Development_and_Lap_Splice_Lengths.csv`
+  16. `ACI318-19_Ch7_Ch8_Ch9_Ch13_Slab_Beam_Footing_Min_Rebar.csv`
+- `manufacturer_catalogs/simpson_strong_tie/`:
+  17. `Simpson_C-C-2026_Strong_Wall_and_Portal_Frame_SSW_WSW.csv`
+  18. `Simpson_C-C-2026_Sill_Plate_Anchors_MASA_MASAP_SSB.csv`
+
+B. Missing Calculation Procedures (`procedures/`):
+- `01_loads_and_seismic/`:
+  1. `asce7_seismic_base_shear_elf_workflow.md`
+  2. `asce7_mwfrs_wind_directional_envelope_workflow.md`
+  3. `asce7_snow_and_seismic_equipment_anchorage_workflow.md`
+- `02_wood_design/`:
+  4. `wood_beam_joist_rafter_design_nds_workflow.md`
+  5. `wood_column_stud_bearing_wall_nds_workflow.md`
+- `03_steel_design/`:
+  6. `steel_beam_flexure_shear_ltb_aisc_workflow.md`
+  7. `steel_column_beam_column_aisc_workflow.md`
+- `04_concrete_masonry_foundation/`:
+  8. `spread_footing_and_grade_beam_aci318_workflow.md`
+  9. `cantilever_retaining_wall_cmu_concrete_workflow.md`
+  10. `drilled_pier_caisson_lateral_bearing_ibc_workflow.md`
+  11. `concrete_cmu_shear_wall_out_of_plane_workflow.md`
+
+C. Minor Cleanup Items Observed in Drive:
+- Legacy pre-Day-1 skeleton CSVs (`table_4_3a_shear_walls.csv`, `table_j2_4_min_fillet_weld.csv`, `table_j3_2_bolt_strength.csv`, `holdowns_hdu_sthd_dtt.csv`) and root procedure drafts (`Cc Wind Parapet Workflow.md`, `Tính Toán Mái Chữ T`, `shear_wall_design_workflow.md`) can be archived to `_Trash_Converted_GSheets_GDocs`.
+
+3. KEY GOOGLE DRIVE FOLDER IDs (VERIFIED 2026-11-14)
+- Reference Library Root (`TCUS`): `1WTG1-B0xZ0GozvfigreJvtLxJI6HnIwQ`
+- App Repo Root (`structural-engineering-kb`): `1tz7tBCDjFtiVpOVvN9MGxpduLx-EA7QO`
+  - `database/`: `1JRyfJmMXhiXrjiZ4NQwhNS2Il4zEjuZC`
+    - `asce_7/v7_22/`: `1ZP0pQdN_yagra5j4MokpQuPL-5LbhQ9-`
+    - `ibc_cbc/v2024_ibc_v2025_cbc/`: `1k4dMvhOmeFlXBlhOHlkAZF8uQHvBCWdR`
+    - `nds_wood/v2024/`: `1NpbvWaDrRLN-kueHnXGbRDakt3D2t-Hv` (`sdpws`: `1Xb9aR189G5C3kcSg_6XdvpwBtrxt50Qd`)
+    - `aisc_360/v16th_ed/`: `1IoCXf-P2Yv-ngPcPBtlDH0B1YageuGs_` (`ch_j_connections`: `1RNJmnDYJsyHXEAJknmmPWUPjk8q1LqTE`)
+    - `aci_318_tms_402/`: `1XDIYxCJpAwT8TDeoisfRNE5_vvAeviJk` (`aci_318_19`: `12f3sJBCH_R1nQKREAlWMeMHEcvBxwkFk`, `tms_402_22`: `1-qchxSzDOmUTCv4-f4jJuw6DZKghSPKf`)
+    - `manufacturer_catalogs/simpson_strong_tie/`: `1ZFeYwdVJs9uU2gdGnni0HpKh7qrDDq-w`
+  - `procedures/`: `1KDHbmqfs4R3rbPvDPziAClQSHwOBGa33`
+    - `01_loads_and_seismic/`: `1XhzddV90SZQSUG-MjE2tL7MqVVq3rewF`
+    - `02_wood_design/`: `1LF3Bo3wcPPC4VQ-gg6yOnonXFfVR9Vlp`
+    - `03_steel_design/`: `1DKyoPc6B1L1f-Kqh1vOHwJYxvvksAXvQ`
+    - `04_concrete_masonry_foundation/`: `19TqDxKRM_Inqp7ONpX2D_TLB_QMvo6OG`
+    - `05_plan_check_responses/`: `1ecvnjT4cqbCfoURXqaWH5SGyv0ahVAhx`
+    - `06_components_and_cladding/`: `1LQXqhYmZjV0hw8h1TEiJnDHOzxZfXuHN`
+  - `core/`: `1-9nKxCr7GbyovVq5cabrVV6c6nIRy3rR`
+  - `exporters/`: `1ir9fWjvnHNWgnHZ1hU1askTMMlnYKA5V`
+  - `gui/`: `18qkaAMzM-9Ov58HMnFPY0Htza1MRXRM6`
+  - `tests/`: `18RwvXqjvyaQj6d6qKnw-DMNcFc0nbDIb`
+
+4. PROPOSED NEXT 10-DAY ROADMAP (DAYS 11 - 20)
+- [PROPOSED] Day 11: Missing Loads, IBC, Wood Member, Steel Member & Concrete/Masonry CSV Databases (Batch 1 & 2) + Drive cleanup.
+- [PROPOSED] Day 12: Missing Primary Member & Global Load Procedures (ASCE 7 ELF/MWFRS/Equipment, Wood Beam/Column, Steel Beam/Column).
+- [PROPOSED] Day 13: Missing Foundation, Retaining Wall, Drilled Pier & Concrete/CMU Wall Procedures (`04_concrete_masonry_foundation/`).
+- [PROPOSED] Day 14: App Core Infrastructure (`config/`, CSV loader, DTOs) & Standardized Excel Exporter (`exporters/excel_builder.py`, `audit_logger.py` - 17 cols A-Q, Arial 10pt, `vertAlign="baseline"`, `Source_Audit`).
+- [PROPOSED] Day 15: Python Calculation Engine — `core/asce7/` (Load Combos, Wind C&C/MWFRS, Seismic ELF & Wall/Equipment Anchorage).
+- [PROPOSED] Day 16: Python Calculation Engine — `core/nds/` (Wood Beams/Columns, Fasteners, SDPWS Shear Walls/Diaphragms, Simpson Lookup).
+- [PROPOSED] Day 17: Python Calculation Engine — `core/aisc360/` (Steel Beams/Columns, Bolts, Welds, Base Plates, HSS Ch. K).
+- [PROPOSED] Day 18: Python Calculation Engine — `core/aci318/` (Anchors Ch. 17, Spread Footings, Retaining Walls, Drilled Piers).
+- [PROPOSED] Day 19: Desktop GUI (`gui/main_window.py`, CustomTkinter forms, CSV dropdowns, Excel/PDF & Plan Check export).
+- [PROPOSED] Day 20: Automated Verification (`tests/test_calcs.py` via `pytest` against Golden Excel benchmarks) & `PyInstaller` packaging.
+================================================================================

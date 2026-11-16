@@ -1,0 +1,85 @@
+﻿Table 12.3.3A – Assigned Specific Gravities
+Category,Species Combination / Grade,"Assigned Specific Gravity, G [1]"
+Visually Graded Sawn Lumber,Alaska Cedar,0.47
+Visually Graded Sawn Lumber,Alaska Hemlock,0.46
+Visually Graded Sawn Lumber,Alaska Spruce,0.41
+Visually Graded Sawn Lumber,Alaska Yellow Cedar,0.46
+Visually Graded Sawn Lumber,Aspen,0.39
+Visually Graded Sawn Lumber,Balsam Fir,0.36
+Visually Graded Sawn Lumber,Beech-Birch-Hickory,0.71
+Visually Graded Sawn Lumber,Coast Sitka Spruce,0.39
+Visually Graded Sawn Lumber,Cottonwood,0.41
+Visually Graded Sawn Lumber,Douglas Fir-Larch,0.50
+Visually Graded Sawn Lumber,Douglas Fir-Larch (North),0.49
+Visually Graded Sawn Lumber,Douglas Fir-South,0.46
+Visually Graded Sawn Lumber,Eastern Hemlock,0.41
+Visually Graded Sawn Lumber,Eastern Hemlock-Balsam Fir,0.36
+Visually Graded Sawn Lumber,Eastern Hemlock-Tamarack,0.41
+Visually Graded Sawn Lumber,Eastern Hemlock-Tamarack (North),0.47
+Visually Graded Sawn Lumber,Eastern Softwoods,0.36
+Visually Graded Sawn Lumber,Eastern Spruce,0.41
+Visually Graded Sawn Lumber,Eastern White Pine,0.36
+Visually Graded Sawn Lumber,Engelmann Spruce-Lodgepole Pine,0.38
+Visually Graded Sawn Lumber,Hem-Fir,0.43
+Visually Graded Sawn Lumber,Hem-Fir (North),0.46
+Visually Graded Sawn Lumber,Mixed Maple,0.55
+Visually Graded Sawn Lumber,Mixed Oak,0.68
+Visually Graded Sawn Lumber,Mixed Southern Pine,0.51
+Visually Graded Sawn Lumber,Mountain Hemlock,0.47
+Visually Graded Sawn Lumber,Northern Pine,0.42
+Visually Graded Sawn Lumber,Northern Red Oak,0.68
+Visually Graded Sawn Lumber,Northern Species,0.35
+Visually Graded Sawn Lumber,Northern White Cedar,0.31
+Visually Graded Sawn Lumber,Ponderosa Pine,0.43
+Visually Graded Sawn Lumber,Red Maple,0.58
+Visually Graded Sawn Lumber,Red Oak,0.67
+Visually Graded Sawn Lumber,Red Pine,0.44
+Visually Graded Sawn Lumber,Redwood,0.37
+Visually Graded Sawn Lumber,Sitka Spruce,0.43
+Visually Graded Sawn Lumber,Southern Pine,0.55
+Visually Graded Sawn Lumber,Spruce-Pine-Fir,0.42
+Visually Graded Sawn Lumber,Spruce-Pine-Fir (South),0.36
+Visually Graded Sawn Lumber,Western Cedars,0.36
+Visually Graded Sawn Lumber,Western Cedars (North),0.35
+Visually Graded Sawn Lumber,Western Hemlock,0.47
+Visually Graded Sawn Lumber,Western Hemlock (North),0.46
+Visually Graded Sawn Lumber,Western White Pine,0.40
+Visually Graded Sawn Lumber,Western Woods,0.36
+Visually Graded Sawn Lumber,White Oak,0.73
+Visually Graded Sawn Lumber,Yellow Poplar,0.43
+MSR and MEL Lumber - Douglas Fir-Larch,"E = 1,900,000 psi and lower grades of MSR",0.50
+MSR and MEL Lumber - Douglas Fir-Larch,"E = 2,000,000 psi grades of MSR",0.51
+MSR and MEL Lumber - Douglas Fir-Larch,"E = 2,100,000 psi grades of MSR",0.52
+MSR and MEL Lumber - Douglas Fir-Larch,"E = 2,200,000 psi grades of MSR",0.53
+MSR and MEL Lumber - Douglas Fir-Larch,"E = 2,300,000 psi grades of MSR",0.54
+MSR and MEL Lumber - Douglas Fir-Larch,"E = 2,400,000 psi grades of MSR",0.55
+MSR and MEL Lumber - Douglas Fir-Larch (North),"E = 1,900,000 psi and lower grades of MSR and MEL",0.49
+MSR and MEL Lumber - Douglas Fir-Larch (North),"E = 2,000,000 psi to 2,200,000 psi grades of MSR and MEL",0.53
+MSR and MEL Lumber - Douglas Fir-Larch (North),"E = 2,300,000 psi and higher grades of MSR and MEL",0.57
+MSR and MEL Lumber - Douglas Fir-Larch (South),"E = 1,000,000 psi and higher grades of MSR",0.46
+MSR and MEL Lumber - Engelmann Spruce-Lodgepole Pine,"E = 1,400,000 psi and lower grades of MSR",0.38
+MSR and MEL Lumber - Engelmann Spruce-Lodgepole Pine,"E = 1,500,000 psi and higher grades of MSR",0.46
+MSR and MEL Lumber - Hem-Fir,"E = 1,500,000 psi and lower grades of MSR",0.43
+MSR and MEL Lumber - Hem-Fir,"E = 1,600,000 psi grades of MSR",0.44
+MSR and MEL Lumber - Hem-Fir,"E = 1,700,000 psi grades of MSR",0.45
+MSR and MEL Lumber - Hem-Fir,"E = 1,800,000 psi grades of MSR",0.46
+MSR and MEL Lumber - Hem-Fir,"E = 1,900,000 psi grades of MSR",0.47
+MSR and MEL Lumber - Hem-Fir,"E = 2,000,000 psi grades of MSR",0.48
+MSR and MEL Lumber - Hem-Fir,"E = 2,100,000 psi grades of MSR",0.49
+MSR and MEL Lumber - Hem-Fir,"E = 2,200,000 psi grades of MSR",0.50
+MSR and MEL Lumber - Hem-Fir,"E = 2,300,000 psi grades of MSR",0.51
+MSR and MEL Lumber - Hem-Fir,"E = 2,400,000 psi grades of MSR",0.52
+MSR and MEL Lumber - Hem-Fir (North),"E = 1,000,000 psi and higher grades of MSR and MEL",0.46
+MSR and MEL Lumber - Southern Pine,"E = 1,700,000 psi and lower grades of MSR and MEL",0.55
+MSR and MEL Lumber - Southern Pine,"E = 1,800,000 psi and higher grades of MSR and MEL",0.57
+MSR and MEL Lumber - Spruce-Pine-Fir,"E = 1,700,000 psi and lower grades of MSR and MEL",0.42
+MSR and MEL Lumber - Spruce-Pine-Fir,"E = 1,800,000 psi and 1,900,000 grades of MSR and MEL",0.46
+MSR and MEL Lumber - Spruce-Pine-Fir,"E = 2,000,000 psi and higher grades of MSR and MEL",0.50
+MSR and MEL Lumber - Spruce-Pine-Fir (South),"E = 1,100,000 psi and lower grades of MSR",0.36
+MSR and MEL Lumber - Spruce-Pine-Fir (South),"E = 1,200,000 psi to 1,900,000 psi grades of MSR",0.42
+MSR and MEL Lumber - Spruce-Pine-Fir (South),"E = 2,000,000 psi and higher grades of MSR",0.50
+MSR and MEL Lumber - Western Cedars,"E = 1,000,000 psi and higher grades of MSR",0.36
+MSR and MEL Lumber - Western Woods,"E = 1,000,000 psi and higher grades of MSR",0.36
+
+Footnotes:
+[1],"Specific gravity, G, based on weight and volume when oven-dry. Different specific gravities, G, are possible for different grades of MSR and MEL lumber (see Table 4C, Footnote 2)."

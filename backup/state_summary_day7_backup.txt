@@ -1,0 +1,65 @@
+================================================================================
+PROJECT STATE SUMMARY: structural-engineering-kb (US Structural Calculation App)
+Last Updated: 2026-11-13 (Completed through Day 7 of 10-Day Roadmap)
+Auto-Update Rule: Update this file every 3 turns to compress context & save tokens.
+================================================================================
+
+1. FINAL GOAL
+- Complete all lookup tables (`database/*.csv`) and calculation procedures (`procedures/*.md`) across a 10-day roadmap for a standalone US residential/light-commercial structural calculation desktop app (`structural_app/`), prior to coding `core/`, `exporters/`, and `gui/`.
+
+2. LOCKED RULES & CONVENTIONS
+- Language: Chat in Vietnamese; 100% of `.csv`, `.md`, code, and filenames in US Structural Engineering English (US Customary units, parallel ASD & LRFD).
+- CSV Standard (`@structural-database-csv`): Filename `[Code]_[TableNumber].csv`, `utf-8-sig` encoding, exact row/column order, exact mathematical symbols, complete verbatim footnotes at bottom, 5-step verification against `TCUS` reference PDFs and official manufacturer catalogs (`strongtie.com`).
+- Procedure Standard (`@structural-procedures`): 7-section Plan Check layout in `.md` format.
+- Direct Raw File Sync to Google Drive: Always upload `.csv`, `.md`, and `.txt` files via `drive:create_file` using `base64_content="file:///..."` and `mime_type="application/octet-stream"` so files remain raw `.csv`/`.md`/`.txt` for local desktop sync (never auto-convert to Google Sheets/Docs).
+- Token Optimization: Update `/structural-engineering-kb/state_summary.txt` automatically every 3 turns with current progress, active file IDs, and next steps.
+
+3. KEY GOOGLE DRIVE FOLDER IDs (CACHE FOR ZERO-SEARCH LOOKUP)
+- Reference Library Root (`TCUS`): `1WTG1-B0xZ0GozvfigreJvtLxJI6HnIwQ`
+  - `TCUS/NDS 2024`: `1FOWH4WhSNWjmc-gvuxh2I_uasV537qYk`
+- App Repo Root (`structural-engineering-kb`): `1tz7tBCDjFtiVpOVvN9MGxpduLx-EA7QO`
+  - `config/`: `1diBqCuQ_sjBEndCqNctSMxaUn3FulcO0`
+  - `database/`: `1JRyfJmMXhiXrjiZ4NQwhNS2Il4zEjuZC`
+  - `database/asce_7/v7_22/`: `1ZP0pQdN_yagra5j4MokpQuPL-5LbhQ9-`
+  - `database/ibc_cbc/v2024_ibc_v2025_cbc/`: `1k4dMvhOmeFlXBlhOHlkAZF8uQHvBCWdR`
+  - `database/nds_wood/v2024/`: `1NpbvWaDrRLN-kueHnXGbRDakt3D2t-Hv`
+  - `database/nds_wood/v2024/sdpws/`: `1Xb9aR189G5C3kcSg_6XdvpwBtrxt50Qd`
+  - `database/aisc_360/`: `1eGXXwAKdvRnsJtVZiuxsOLU6bptolYYF` (`ch_j_connections`: `1RNJmnDYJsyHXEAJknmmPWUPjk8q1LqTE`)
+  - `database/aci_318_tms_402/`: `1XDIYxCJpAwT8TDeoisfRNE5_vvAeviJk`
+  - `database/manufacturer_catalogs/simpson_strong_tie/`: `1ZFeYwdVJs9uU2gdGnni0HpKh7qrDDq-w`
+  - `procedures/`: `1KDHbmqfs4R3rbPvDPziAClQSHwOBGa33`
+  - `procedures/01_loads_and_seismic/`: `1XhzddV90SZQSUG-MjE2tL7MqVVq3rewF`
+  - `procedures/02_wood_design/`: `1LF3Bo3wcPPC4VQ-gg6yOnonXFfVR9Vlp`
+  - `procedures/03_steel_design/`: `1DKyoPc6B1L1f-Kqh1vOHwJYxvvksAXvQ`
+  - `procedures/04_concrete_masonry_foundation/`: `19TqDxKRM_Inqp7ONpX2D_TLB_QMvo6OG`
+  - `procedures/05_plan_check_responses/`: `1ecvnjT4cqbCfoURXqaWH5SGyv0ahVAhx`
+  - `procedures/06_components_and_cladding/`: `1LQXqhYmZjV0hw8h1TEiJnDHOzxZfXuHN`
+  - `core/`: `1-9nKxCr7GbyovVq5cabrVV6c6nIRy3rR` (`asce7`: `1dmUSm_JmXBdDFjD9MAb02PcXkDQ5S61Q`, `aisc360`: `1cHbTiyRGeiAiuFX4f-te-JCzpZan8X1i`, `nds`: `1Y0k0otOuMWPG0oxIR3zXhf1M-HWciRpS`, `aci318`: `1qwmaummhPqRCGIbTcsvkFAxuSkPzNpL5`)
+  - `exporters/`: `1ir9fWjvnHNWgnHZ1hU1askTMMlnYKA5V`
+  - `gui/`: `18qkaAMzM-9Ov58HMnFPY0Htza1MRX1M6`
+  - `tests/`: `18RwvXqjvyaQj6d6qKnw-DMNcFc0nbDIb`
+
+4. COMPLETED WORK
+- [DONE] Repo Folder Structure & Skeleton Files (`core/`, `exporters/`, `gui/`, `tests/`, `config/app_settings.json`, `main.py`, `requirements.txt`).
+- [DONE] Day 1 (ASCE 7-22 Basic C&C Wind — Parapet & Roof Overhang)
+- [DONE] Day 2 (ASCE 7-22 & IBC 2024 C&C Wind/Seismic — Awning, Trellis, Guardrail & Load Combos)
+- [DONE] Day 3 (NDS 2024 Fasteners — Nails, Wood Screws, Lag Screws & Simpson SDS)
+- [DONE] Day 4 (NDS 2024 Bolts, Appendix L1/L7/L8 & Appendix E Brittle Group Tear-Out)
+- [DONE] Day 5 (Wood Lateral — SDPWS 2021/2024 Shear Walls & Diaphragms, Chord/Collector Straps, Simpson Strong-Tie Joist Hangers, Hurricane Ties & Holdowns)
+- [DONE] Day 6 (Steel Connections Part 1 — AISC 360-22 Bolts & Welds, Tables J2.4, J2.5, J3.2, J3.3–J3.5, Base Plates):
+  - CSVs in `database/aisc_360/ch_j_connections/`: `AISC360-22_Table_J2.4.csv` (`1WeeSL66x6w5AVx4vbyXj5niartqhCiUu`), `J2.5_Welded_Joints.csv` (`1kYlcW83kevY3Q8Br7NME90YDEY-_P9e9`), `J3.2_Bolt_Strength.csv` (`1WjB20ItW4jzPwm3A_CcfFbt0UFfgymap`), `J3.3_J3.4_J3.5_Bolt_Holes_and_Edge_Distances.csv` (`1tSndb0vew_bLNszw9tMhaTft_JZgrnjV`), `AISC_DG1_Base_Plate_and_Anchor_Rod_Design.csv` (`1TV7TNolvMh9EqC0dvb6yaYDDsfdVi3wp`).
+  - Procedures in `procedures/03_steel_design/`: `steel_bolted_connection_aisc_workflow.md` (`1HzmobpIsM-xzG5ZkTIPBVwnONukTJG-t`), `steel_welded_connection_aisc_workflow.md` (`1MK2en0wVqBDdMuSyQIiesPDccuVTZfz5`), `steel_column_base_plate_aisc_dg1_workflow.md` (`1Yjrk4woap1RVbCC7xF-UA2qok9AAG3b2`).
+- [DONE] Day 7 (Steel Connections Part 2 — Shear Tab, Single/Double Angle, HSS-to-HSS Moment/Shear Connections per AISC Ch. J & K):
+  - CSVs in `database/aisc_360/ch_j_connections/`:
+    - `AISC_Manual_16th_Part10_Shear_Tab_and_Single_Angle_Design.csv` (`1HlszrCT5nu0-55MWtCg1QnCI6Me7oFxm`)
+    - `AISC360-22_Table_K3.2_K4.2_HSS_Connections.csv` (`1CnJAhhGHwBM_Wg-G_d1Feo7rr_jeJC2G`)
+    - `AISC_Manual_16th_Part7_Eccentric_Bolt_C_Coefficients.csv` (`1UhcS_ad-Nh9ZxP_abAii9JSIztoQhk0m`)
+  - Procedures in `procedures/03_steel_design/`:
+    - `steel_shear_tab_connection_aisc_workflow.md` (Uploaded Day 7)
+    - `steel_single_double_angle_shear_aisc_workflow.md` (Uploaded Day 7)
+    - `steel_hss_to_hss_moment_shear_aisc_workflow.md` (Uploaded Day 7)
+
+5. NEXT STEPS (REMAINING ROADMAP)
+- [NEXT] Day 8: Concrete & CMU Anchorage (ACI 318-19/25 Ch. 17 Cast-in/Post-Installed Anchors, TMS 402 CMU Out-of-Plane Breakout & Embedded Post).
+- [PENDING] Days 9–10: End-to-End C&C Sub-Assembly Synthesis Procedures (`06_components_and_cladding/`: Parapet, Cantilever/Tie-Back Awning, Wood/Steel Trellis, Deck Guardrail Post-to-Framing/Slab).
+================================================================================

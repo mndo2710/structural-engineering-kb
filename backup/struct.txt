@@ -1,0 +1,20 @@
+structural_app/
+├── config/                 # [Hiện có] active_code_registry.json, bổ sung app_settings.json
+├── database/               # [Hiện có] CSV tables (ASCE 7, AISC 360, NDS, ACI 318, v.v.)
+├── procedures/             # [Hiện có] Quy trình thiết kế, plan check templates
+├── core/                   # [MỚI] Lõi xử lý logic và tính toán kỹ thuật
+│   ├── asce7/              # Module tải trọng (Gió, Động đất)
+│   ├── aisc360/            # Module cấu kiện thép, liên kết
+│   ├── nds/                # Module cấu kiện gỗ, lag screw
+│   └── aci318/             # Module bê tông, móng, neo (anchor bolt)
+├── exporters/              # [MỚI] Trình xuất báo cáo tính toán
+│   ├── excel_builder.py    # Render openpyxl (định dạng 17 cột, Arial 10pt, vertAlign="baseline")
+│   └── audit_logger.py     # Tự động tổng hợp và tạo worksheet Source_Audit
+├── gui/                    # [MỚI] Giao diện người dùng desktop
+│   ├── main_window.py      # Cửa sổ điều khiển trung tâm
+│   ├── widgets/            # Các form nhập liệu, dropdown chọn thông số từ database
+│   └── assets/             # Logo, icon ứng dụng
+├── tests/                  # [MỚI] Môi trường kiểm thử
+│   └── test_calcs.py       # Đối chiếu kết quả Python với file Excel gốc
+├── main.py                 # [MỚI] Entry point khởi động ứng dụng
+└── requirements.txt        # [MỚI] Khai báo thư viện (pandas, openpyxl, customtkinter...)

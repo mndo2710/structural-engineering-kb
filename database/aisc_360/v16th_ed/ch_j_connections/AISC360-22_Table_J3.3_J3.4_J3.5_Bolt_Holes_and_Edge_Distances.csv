@@ -1,0 +1,15 @@
+﻿Bolt Diameter d (in.),Standard Hole Diameter (in.) [Table J3.3],Oversized Hole Diameter (in.) [Table J3.3],Short-Slot Dimensions Width x Length (in.) [Table J3.3],Long-Slot Dimensions Width x Length (in.) [Table J3.3],Minimum Edge Distance Standard Hole (in.) [Table J3.4],C2 Increment Oversized Hole (in.) [Table J3.5],C2 Increment Short-Slot Perp to Edge (in.) [Table J3.5],C2 Increment Long-Slot Perp to Edge (in.) [Table J3.5],Minimum Spacing 2-2/3*d (in.) [Sec. J3.3],Preferred Spacing 3*d (in.) [Sec. J3.3],Source Reference
+1/2,9/16,5/8,9/16 x 11/16,9/16 x 1-1/4,3/4,1/16,1/8,3/8 (0.75*d),1.333 (1-3/8),1.50 (1-1/2),"ANSI/AISC 360-22 Tables J3.3, J3.4, J3.5"
+5/8,11/16,13/16,11/16 x 7/8,11/16 x 1-9/16,7/8,1/16,1/8,15/32 (0.75*d),1.667 (1-11/16),1.875 (1-7/8),"ANSI/AISC 360-22 Tables J3.3, J3.4, J3.5"
+3/4,13/16,15/16,13/16 x 1,13/16 x 1-7/8,1,1/16,1/8,9/16 (0.75*d),2.00 (2),2.25 (2-1/4),"ANSI/AISC 360-22 Tables J3.3, J3.4, J3.5"
+7/8,15/16,1-1/16,15/16 x 1-1/8,15/16 x 2-3/16,1-1/8,1/16,1/8,21/32 (0.75*d),2.333 (2-3/8),2.625 (2-5/8),"ANSI/AISC 360-22 Tables J3.3, J3.4, J3.5"
+1,1-1/8,1-1/4,1-1/8 x 1-5/16,1-1/8 x 2-1/2,1-1/4,1/8,1/8,3/4 (0.75*d),2.667 (2-11/16),3.00 (3),"ANSI/AISC 360-22 Tables J3.3, J3.4, J3.5"
+1-1/8,1-1/4 (d+1/8),1-7/16 (d+5/16),1-1/4 x 1-1/2 ((d+1/8)x(d+3/8)),1-1/4 x 2-13/16 ((d+1/8)x2.5*d),1-1/2,1/8,3/16,27/32 (0.75*d),3.00 (3),3.375 (3-3/8),"ANSI/AISC 360-22 Tables J3.3, J3.4, J3.5"
+1-1/4,1-3/8 (d+1/8),1-9/16 (d+5/16),1-3/8 x 1-5/8 ((d+1/8)x(d+3/8)),1-3/8 x 3-1/8 ((d+1/8)x2.5*d),1-5/8,1/8,3/16,15/16 (0.75*d),3.333 (3-3/8),3.75 (3-3/4),"ANSI/AISC 360-22 Tables J3.3, J3.4, J3.5"
+Over 1-1/4,d + 1/8,d + 5/16,(d + 1/8) x (d + 3/8),(d + 1/8) x 2.5*d,1.25 * d,1/8,3/16,0.75 * d,2.667 * d,3.0 * d,"ANSI/AISC 360-22 Tables J3.3, J3.4, J3.5"
+
+"Notes and Footnotes (ANSI/AISC 360-22 Tables J3.3, J3.4, J3.5 & Sections J3.3–J3.5):"
+"1. When the slot axis is parallel to the edge of the connected part, the edge distance increment C2 = 0 in. (per Table J3.5)."
+"2. Maximum Edge Distance (Sec. J3.5): The maximum distance from the center of any bolt to the nearest edge of parts in contact shall be 12 * t (where t is thickness of connected part under consideration), but shall not exceed 6 in."
+"3. Maximum Longitudinal Spacing (Sec. J3.5): For painted or unpainted members not subject to corrosion, max spacing = min(24*t, 12 in.). For weathering steel subject to atmospheric corrosion, max spacing = min(14*t, 7 in.)."
+"4. Net Section Hole Deduction (Sec. B4.3b): When computing net area A_n for tension rupture, the effective hole width = d_hole + 1/16 in. (i.e., d + 1/8 in. for standard holes up to 7/8 in. bolt, and d + 3/16 in. for 1 in. and larger bolts)."

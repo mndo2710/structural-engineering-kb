@@ -1,0 +1,60 @@
+﻿"NDS 2024 Appendix Tables L2, L3, L4, and I1 – Standard Dimensions and Bending Yield Strengths (F_yb) for Lag Screws, Wood Screws, and Nails"
+Appendix Table,Fastener Category,Size / Designation,Nominal Diameter D (in.),Root / Minor Diameter D_r (in.),Head Diameter / Width Across Flats F or D_H (in.),Head Height H (in.),Tapered Tip Length E (in.),Threads per Inch N,Bending Yield Strength F_yb (psi),Standard / Notes
+Table L2 & I1,"Standard Hex Lag Screw [1],[2]","1/4""",0.250,0.173,7/16 (0.4375),11/64 (0.1719),5/32 (0.1563),10,70000,"ANSI/ASME B18.2.1; Min thread length T = min(6"", 0.5*L + 0.5"")"
+Table L2 & I1,"Standard Hex Lag Screw [1],[2]","5/16""",0.3125,0.227,1/2 (0.500),7/32 (0.2188),3/16 (0.1875),9,60000,"ANSI/ASME B18.2.1; Min thread length T = min(6"", 0.5*L + 0.5"")"
+Table L2 & I1,"Standard Hex Lag Screw [1],[2]","3/8""",0.375,0.265,9/16 (0.5625),1/4 (0.250),7/32 (0.2188),7,45000,"ANSI/ASME B18.2.1; Min thread length T = min(6"", 0.5*L + 0.5"")"
+Table L2 & I1,"Standard Hex Lag Screw [1],[2]","7/16""",0.4375,0.328,5/8 (0.625),19/64 (0.2969),9/32 (0.2813),7,45000,"ANSI/ASME B18.2.1; Min thread length T = min(6"", 0.5*L + 0.5"")"
+Table L2 & I1,"Standard Hex Lag Screw [1],[2]","1/2""",0.500,0.371,3/4 (0.750),11/32 (0.3438),5/16 (0.3125),6,45000,"ANSI/ASME B18.2.1; Min thread length T = min(6"", 0.5*L + 0.5"")"
+Table L2 & I1,"Standard Hex Lag Screw [1],[2]","5/8""",0.625,0.471,15/16 (0.9375),27/64 (0.4219),13/32 (0.4063),5,45000,"ANSI/ASME B18.2.1; Min thread length T = min(6"", 0.5*L + 0.5"")"
+Table L2 & I1,"Standard Hex Lag Screw [1],[2]","3/4""",0.750,0.579,1-1/8 (1.125),1/2 (0.500),1/2 (0.500),4.5,45000,"ANSI/ASME B18.2.1; Min thread length T = min(6"", 0.5*L + 0.5"")"
+Table L2 & I1,"Standard Hex Lag Screw [1],[2]","7/8""",0.875,0.683,1-5/16 (1.3125),37/64 (0.5781),19/32 (0.5938),4,45000,"ANSI/ASME B18.2.1; Min thread length T = min(6"", 0.5*L + 0.5"")"
+Table L2 & I1,"Standard Hex Lag Screw [1],[2]","1""",1.000,0.780,1-1/2 (1.500),43/64 (0.6719),11/16 (0.6875),3.5,45000,"ANSI/ASME B18.2.1; Min thread length T = min(6"", 0.5*L + 0.5"")"
+Table L2 & I1,"Standard Hex Lag Screw [1],[2]","1-1/8""",1.125,0.887,1-11/16 (1.6875),3/4 (0.750),25/32 (0.7813),3.25,45000,"ANSI/ASME B18.2.1; Min thread length T = min(6"", 0.5*L + 0.5"")"
+Table L2 & I1,"Standard Hex Lag Screw [1],[2]","1-1/4""",1.250,1.012,1-7/8 (1.875),27/32 (0.8438),7/8 (0.875),3.25,45000,"ANSI/ASME B18.2.1; Min thread length T = min(6"", 0.5*L + 0.5"")"
+Table L3 & I1,Standard Wood Screw [3],No. 6,0.138,0.113,0.262,N/A,2D (0.276),N/A,100000,"ANSI/ASME B18.6.1; Thread length >= max(4D, 2/3*L)"
+Table L3 & I1,Standard Wood Screw [3],No. 7,0.151,0.122,0.287,N/A,2D (0.302),N/A,90000,"ANSI/ASME B18.6.1; Thread length >= max(4D, 2/3*L)"
+Table L3 & I1,Standard Wood Screw [3],No. 8,0.164,0.131,0.312,N/A,2D (0.328),N/A,90000,"ANSI/ASME B18.6.1; Thread length >= max(4D, 2/3*L)"
+Table L3 & I1,Standard Wood Screw [3],No. 9,0.177,0.142,0.337,N/A,2D (0.354),N/A,90000,"ANSI/ASME B18.6.1; Thread length >= max(4D, 2/3*L)"
+Table L3 & I1,Standard Wood Screw [3],No. 10,0.190,0.152,0.363,N/A,2D (0.380),N/A,80000,"ANSI/ASME B18.6.1; Thread length >= max(4D, 2/3*L)"
+Table L3 & I1,Standard Wood Screw [3],No. 12,0.216,0.171,0.414,N/A,2D (0.432),N/A,80000,"ANSI/ASME B18.6.1; Thread length >= max(4D, 2/3*L)"
+Table L3 & I1,Standard Wood Screw [3],No. 14,0.242,0.196,0.480,N/A,2D (0.484),N/A,70000,"ANSI/ASME B18.6.1; Thread length >= max(4D, 2/3*L)"
+Table L3 & I1,Standard Wood Screw [3],No. 16,0.268,0.209,0.515,N/A,2D (0.536),N/A,70000,"ANSI/ASME B18.6.1; Thread length >= max(4D, 2/3*L)"
+Table L3 & I1,Standard Wood Screw [3],No. 18,0.294,0.232,0.602,N/A,2D (0.588),N/A,60000,"ANSI/ASME B18.6.1; Thread length >= max(4D, 2/3*L)"
+Table L3 & I1,Standard Wood Screw [3],No. 20,0.320,0.255,0.616,N/A,2D (0.640),N/A,60000,"ANSI/ASME B18.6.1; Thread length >= max(4D, 2/3*L)"
+Table L3 & I1,Standard Wood Screw [3],No. 24,0.372,0.298,0.724,N/A,2D (0.744),N/A,45000,"ANSI/ASME B18.6.1; Thread length >= max(4D, 2/3*L)"
+Table L4 & I1,Common Steel Wire Nail [4],"6d (L = 2"")",0.113,0.113,0.266,N/A,2D (0.226),Smooth,100000,ASTM F1667; Length L = 2.0 in.
+Table L4 & I1,Common Steel Wire Nail [4],"7d (L = 2-1/4"")",0.113,0.113,0.266,N/A,2D (0.226),Smooth,100000,ASTM F1667; Length L = 2.25 in.
+Table L4 & I1,Common Steel Wire Nail [4],"8d (L = 2-1/2"")",0.131,0.131,0.281,N/A,2D (0.262),Smooth,100000,ASTM F1667; Length L = 2.50 in.
+Table L4 & I1,Common Steel Wire Nail [4],"10d (L = 3"")",0.148,0.148,0.312,N/A,2D (0.296),Smooth,90000,ASTM F1667; Length L = 3.00 in.
+Table L4 & I1,Common Steel Wire Nail [4],"12d (L = 3-1/4"")",0.148,0.148,0.312,N/A,2D (0.296),Smooth,90000,ASTM F1667; Length L = 3.25 in.
+Table L4 & I1,Common Steel Wire Nail [4],"16d (L = 3-1/2"")",0.162,0.162,0.344,N/A,2D (0.324),Smooth,90000,ASTM F1667; Length L = 3.50 in.
+Table L4 & I1,Common Steel Wire Nail [4],"20d (L = 4"")",0.192,0.192,0.406,N/A,2D (0.384),Smooth,80000,ASTM F1667; Length L = 4.00 in.
+Table L4 & I1,Common Steel Wire Nail [4],"30d (L = 4-1/2"")",0.207,0.207,0.438,N/A,2D (0.414),Smooth,80000,ASTM F1667; Length L = 4.50 in.
+Table L4 & I1,Common Steel Wire Nail [4],"40d (L = 5"")",0.225,0.225,0.469,N/A,2D (0.450),Smooth,80000,ASTM F1667; Length L = 5.00 in.
+Table L4 & I1,Common Steel Wire Nail [4],"50d (L = 5-1/2"")",0.244,0.244,0.500,N/A,2D (0.488),Smooth,70000,ASTM F1667; Length L = 5.50 in.
+Table L4 & I1,Common Steel Wire Nail [4],"60d (L = 6"")",0.263,0.263,0.531,N/A,2D (0.526),Smooth,70000,ASTM F1667; Length L = 6.00 in.
+Table L4 & I1,Box Steel Wire Nail [4],"6d (L = 2"")",0.099,0.099,0.266,N/A,2D (0.198),Smooth,100000,ASTM F1667; Length L = 2.00 in.
+Table L4 & I1,Box Steel Wire Nail [4],"7d (L = 2-1/4"")",0.099,0.099,0.266,N/A,2D (0.198),Smooth,100000,ASTM F1667; Length L = 2.25 in.
+Table L4 & I1,Box Steel Wire Nail [4],"8d (L = 2-1/2"")",0.113,0.113,0.297,N/A,2D (0.226),Smooth,100000,ASTM F1667; Length L = 2.50 in.
+Table L4 & I1,Box Steel Wire Nail [4],"10d (L = 3"")",0.128,0.128,0.312,N/A,2D (0.256),Smooth,100000,ASTM F1667; Length L = 3.00 in.
+Table L4 & I1,Box Steel Wire Nail [4],"12d (L = 3-1/4"")",0.128,0.128,0.312,N/A,2D (0.256),Smooth,100000,ASTM F1667; Length L = 3.25 in.
+Table L4 & I1,Box Steel Wire Nail [4],"16d (L = 3-1/2"")",0.135,0.135,0.344,N/A,2D (0.270),Smooth,100000,ASTM F1667; Length L = 3.50 in.
+Table L4 & I1,Box Steel Wire Nail [4],"20d (L = 4"")",0.148,0.148,0.375,N/A,2D (0.296),Smooth,90000,ASTM F1667; Length L = 4.00 in.
+Table L4 & I1,Box Steel Wire Nail [4],"30d (L = 4-1/2"")",0.148,0.148,0.375,N/A,2D (0.296),Smooth,90000,ASTM F1667; Length L = 4.50 in.
+Table L4 & I1,Box Steel Wire Nail [4],"40d (L = 5"")",0.162,0.162,0.406,N/A,2D (0.324),Smooth,90000,ASTM F1667; Length L = 5.00 in.
+Table L4 & I1,Sinker Steel Wire Nail [4],"6d (L = 1-7/8"")",0.092,0.092,0.234,N/A,2D (0.184),Smooth,100000,ASTM F1667; Length L = 1.875 in.
+Table L4 & I1,Sinker Steel Wire Nail [4],"7d (L = 2-1/8"")",0.099,0.099,0.250,N/A,2D (0.198),Smooth,100000,ASTM F1667; Length L = 2.125 in.
+Table L4 & I1,Sinker Steel Wire Nail [4],"8d (L = 2-3/8"")",0.113,0.113,0.266,N/A,2D (0.226),Smooth,100000,ASTM F1667; Length L = 2.375 in.
+Table L4 & I1,Sinker Steel Wire Nail [4],"10d (L = 2-7/8"")",0.120,0.120,0.281,N/A,2D (0.240),Smooth,100000,ASTM F1667; Length L = 2.875 in.
+Table L4 & I1,Sinker Steel Wire Nail [4],"12d (L = 3-1/8"")",0.135,0.135,0.312,N/A,2D (0.270),Smooth,100000,ASTM F1667; Length L = 3.125 in.
+Table L4 & I1,Sinker Steel Wire Nail [4],"16d (L = 3-1/4"")",0.148,0.148,0.344,N/A,2D (0.296),Smooth,90000,ASTM F1667; Length L = 3.25 in.
+Table L4 & I1,Sinker Steel Wire Nail [4],"20d (L = 3-3/4"")",0.177,0.177,0.375,N/A,2D (0.354),Smooth,90000,ASTM F1667; Length L = 3.75 in.
+Table L4 & I1,Sinker Steel Wire Nail [4],"30d (L = 4-1/4"")",0.192,0.192,0.406,N/A,2D (0.384),Smooth,80000,ASTM F1667; Length L = 4.25 in.
+Table L4 & I1,Sinker Steel Wire Nail [4],"40d (L = 4-3/4"")",0.207,0.207,0.438,N/A,2D (0.414),Smooth,80000,ASTM F1667; Length L = 4.75 in.
+Table L4 & I1,Sinker Steel Wire Nail [4],"60d (L = 5-3/4"")",0.244,0.244,0.500,N/A,2D (0.488),Smooth,70000,ASTM F1667; Length L = 5.75 in.
+
+Footnotes:
+[1],"Table L2: Tolerances are specified in ANSI/ASME B18.2.1. For reduced body diameter lag screws, the unthreaded body diameter may be reduced to approximately the root diameter, D_r."
+[2],"Table L2: Minimum thread length (T) for lag screw lengths (L) is 6 in. or 1/2 the lag screw length plus 0.5 in., whichever is less. Effective thread length excluding tapered tip is T - E."
+[3],"Table L3: Tolerances specified in ANSI/ASME B18.6.1. Thread length is at least 4D or 2/3 of the wood screw length L, whichever is greater. Tapered tip length is permitted to be assumed as 2D."
+[4],Table L4: Tolerances are specified in ASTM F1667. It is permitted to assume the length of the tapered tip is 2D.

@@ -1,0 +1,58 @@
+================================================================================
+CORE CONTEXT FILES USAGE GUIDE - PROJECT structural-engineering-kb
+Last Updated: 2026-11-14
+Google Drive Root Folder ID: 1tz7tBCDjFtiVpOVvN9MGxpduLx-EA7QO
+================================================================================
+
+1. ROLES OF THE 3 CORE CONTEXT FILES
+--------------------------------------------------------------------------------
+1) state_summary.txt (State Context - Project Progress & ID Registry)
+   - File ID: 1R0GaU-5zKJaNllUXudJYObH8VFlr9oOl
+   - Role: Tracks current development progress, completed/pending work packages,
+     and cached Google Drive Folder/File IDs for zero-search lookup.
+   - Update Frequency: Automatically updated every 3 turns or upon milestone
+     completion.
+
+2) rules.md (Constraint Context - Mandatory Working Rules)
+   - File ID: 1YV019YOt6GxFoGAm0byItpKLtuDIQKAg
+   - Role: Locks all 8 core working rule groups (ASD/LRFD separation,
+     US Customary units, CSV/7-section Markdown/17-column Arial 10pt Excel
+     standards, raw Google Drive sync, backup/ cleanup discipline, and
+     concise Plan Check response formatting).
+   - Update Frequency: Updated immediately whenever the user adds or modifies
+     a working rule.
+
+3) proposed.md (Architectural Context - Software Architecture Document v1.0)
+   - File ID: 15kJVFqyGOWWIvIzeO3Eu4v4ANxqIUwc3
+   - Role: Authoritative V1 Windows Desktop application specification
+     (PySide6 GUI, SQLite project storage, Google Drive OAuth 2.0 sync,
+     openpyxl XLSX & ReportLab PDF exporters, 5-level pytest verification,
+     and zero AI/LLM integration in V1 runtime).
+   - Edit Policy: ONLY Section "2.1 Existing Project Status" may be updated in
+     parallel with state_summary.txt; DO NOT modify any other section without
+     explicit user permission.
+
+2. TOKEN-OPTIMIZED CONTEXT LOADING FOR NEW SESSIONS
+--------------------------------------------------------------------------------
+- Step 1 (Default Session Kickoff): Load ONLY `state_summary.txt` + `rules.md`
+  to restore project state, cached Drive IDs, and locked conventions with
+  minimal token overhead.
+- Step 2 (On-Demand Architectural Lookup): Read ONLY the relevant section of
+  `proposed.md` when implementing its corresponding module (avoid loading the
+  entire ~45 KB file on every prompt):
+  * Sections 5 & 7 : KnowledgeBaseService & Application Service Layer
+  * Section 6      : Calculation Engine (`core/`) & `CalculationResult`
+  * Section 8      : PySide6 Desktop GUI (`gui/`) & 4-Panel Workspace
+  * Section 9      : SQLite Database (`storage/projects/`) & Revision History
+  * Section 10     : CloudSyncService (Google Drive API, OAuth 2.0, Cache)
+  * Section 11     : Export Engine (`exporters/`: XLSX & ReportLab PDF)
+  * Section 12     : 5-Level Testing (`tests/`: Unit, Reference, Benchmark, E2E)
+
+3. DEVELOPMENT CONTEXT VS. V1 RUNTIME DISTINCTION
+--------------------------------------------------------------------------------
+- Development Phase: These 3 files serve as structured development context for
+  Gemini / IDE coding agents.
+- Production V1 Runtime: The desktop application executes 100% deterministic
+  Python calculations with zero AI/LLM API calls and does NOT load
+  `proposed.md` as a runtime prompt (per SAD Section 1.3 and ADR-09).
+================================================================================
