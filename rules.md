@@ -1,6 +1,6 @@
 # MASTER WORKING RULES & ENGINEERING CONVENTIONS (`rules.md`)
-**Project:** `structural-engineering-kb` (Standalone US Structural Engineering Calculation Application)  
-**Last Updated:** November 14, 2026  
+**Project:** `structural-engineering-kb` (Standalone US Structural Engineering Calculation Application) 
+**Last Updated:** November 17, 2026 
 **Status:** Locked & Active (Auto-updated upon explicit user instruction)
 
 ---
@@ -62,6 +62,12 @@
   5. **Section 5: Supporting Member / Global Substrate Verification** (Supporting wall, slab edge, rafter back-span, or footing/pier checks).
   6. **Section 6: Mandatory Detailing & Construction Notes** (Material grades, weldability ASTM A706 / AWS D1.4, fastener rules, minimum edge distances).
   7. **Section 7: Summary Calculation & Detailing Checklist Table** (4 columns: `Step`, `Design Verification Item`, `Governing Code Reference`, `Limit State / Acceptance Equation`).
+- **Standardized Load-Path Verification Sequence (Mandatory Consistency Across Procedures):** Within Section 4 (and across Sections 3–5), every procedure must follow this 4-stage load-path order (while allowing the exact number of sub-steps to adapt to connection mechanics):
+  1. *Stage 1 — Geometry, Detailing & Applicability Limits:* Verify section compactness/slenderness, $t_{des}$, Chapter K limits, hole spacing/edge distances, or weld size limits ($w_{min}, w_{max}$).
+  2. *Stage 2 — Primary Force-Transfer Mechanism:* Check the primary load-transferring element (bolt shear/tension/eccentricity, weld throat capacity, HSS face plastification/punching/sidewall checks, or concrete bearing).
+  3. *Stage 3 — Connecting Element & Base Metal Limit States:* Check affected plate/angle/base-metal yielding, net rupture, block shear, shear-flexure interaction, or prying action.
+  4. *Stage 4 — Supporting Member / Global Substrate & Combined Interaction:* Check supporting member web/HSS wall punching shear, panel zone shear, torsion interaction (Eq. H3-6), or concrete/masonry breakout.
+- **Dual LRFD & ASD Parity:** Every `.md` procedure in `procedures/` must present parallel LRFD ($\phi R_n$) and ASD ($R_n / \Omega$) capacities at every check without mixing load or resistance factors.
 
 ---
 

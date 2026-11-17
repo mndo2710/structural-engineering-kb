@@ -3,8 +3,8 @@
 ## 1. General & Code Basis
 - **Governing Codes & Standards**:
   - **2024 International Building Code (IBC)** / **2025 California Building Code (CBC)**, Chapter 22.
-  - **ANSI/AISC 360-22**: *Specification for Structural Steel Buildings*, Section B3.4 (Simple Connections), Section J2 (Welds), Section J3 (Bolts), Section J4 (Connecting Elements).
-  - **AISC Steel Construction Manual, 16th Edition**: Part 10 (Single-Plate Shear Connections — Conventional Table 10-9 & Extended Configurations), Part 7 (ICOR $C$-Coefficients), Part 9 (Plate Buckling & Coped Beams).
+  - **ANSI/AISC 360-22**: *Specification for Structural Steel Buildings*, Section B3.4 (Simple Connections), Section J2 (Welds), Section J3 (Bolts), Section J4 (Connecting Elements), and Chapter K (Table K1.2 for HSS Column Support).
+  - **AISC Steel Construction Manual, 16th Edition**: Part 10 (Single-Plate Shear Connections — Conventional Table 10-9, Extended Configurations & Single-Plate Connections to HSS), Part 7 (ICOR $C$-Coefficients), Part 9 (Plate Buckling & Coped Beams).
 - **Referenced Repository Databases**:
   - `database/aisc_360/ch_j_connections/AISC_Manual_16th_Part10_Shear_Tab_and_Single_Angle_Design.csv`
   - `database/aisc_360/ch_j_connections/AISC_Manual_16th_Part7_Eccentric_Bolt_C_Coefficients.csv`
@@ -80,9 +80,14 @@
      $$\left(\frac{V_u}{\phi V_{n,sy}}\right)^2 + \left(\frac{M_u}{\phi M_n}\right)^2 \le 1.00 \quad \text{(LRFD)} \qquad \text{or} \qquad \left(\frac{V_a}{V_{n,sy}/\Omega}\right)^2 + \left(\frac{M_a}{M_n/\Omega}\right)^2 \le 1.00 \quad \text{(ASD)}$$
    - Lateral-torsional buckling of extended plate per AISC Manual Part 9 ($F_{cr}$ based on $d_p / t_p$ and unbraced length $a$).
 
-### Step 6: Support Weld & Supporting Web Check (AISC Sec. J2.4 & Manual Part 10)
+### Step 6: Support Weld & Supporting Member Web / HSS Wall Check (AISC Sec. J2.4, Ch. K & Manual Part 10)
 1. **Double-Sided Fillet Weld**: Size $w \ge \frac{5}{8} t_p$ (`E70XX`) on both sides of the shear tab so the plate yields before the weld fractures (no eccentric weld moment check required for conventional tabs with $w \ge \frac{5}{8} t_p$; for extended tabs, verify weld under combined $V$ and $M = V \cdot a$ if support is rigid).
-2. **Supporting Member Web Punching/Bearing**: If framing into a thin column web or girder web, verify supporting web shear/flexural yielding per AISC Sec. J4.2 or Chapter K (if HSS column).
+2. **Supporting W-Shape Web / Girder Web Check**: If framing into a thin column web or girder web, verify supporting web shear/flexural yielding per AISC Sec. J4.2.
+3. **Supporting HSS Column Wall Checks (AISC Manual Part 10, *Single-Plate Connections to HSS* & AISC 360-22 Table K1.2)**:
+   - **HSS Wall Slenderness Limit**: Verify that the HSS column wall is non-slender under axial compression per Table B4.1a ($b/t_{des} \le 1.40\sqrt{E/F_y} \approx 33.7$ for rectangular HSS; $D/t_{des} \le 0.11 E/F_y \approx 63.8$ for round HSS with $F_y = 50\text{ ksi}$). If slender, use a **through-plate connection** instead of a single-plate shear tab.
+   - **HSS Wall Punching Shear Rupture**: Verify the HSS wall of design thickness $t_{des}$ ($0.93 t_{nom}$ for ERW ASTM A500; $1.00 t_{nom}$ for A1085) and tensile strength $F_{u,HSS}$ under eccentric shear $V_r$ at eccentricity $e$ (distance from HSS face to centroid of bolt group) per AISC Manual Part 10 ($\phi = 0.75, \; \Omega = 2.00$):
+     $$V_u \cdot e \le \phi \frac{F_{u,HSS} \cdot t_{des} \cdot d_p^2}{5} \quad \text{(LRFD)} \qquad \text{or} \qquad V_a \cdot e \le \frac{F_{u,HSS} \cdot t_{des} \cdot d_p^2}{5 \cdot \Omega} \quad \text{(ASD)}$$
+   - **Axial Force on Shear Tab (If Present)**: If the shear tab also transfers significant axial tension or compression into the HSS face, additionally check longitudinal plate-to-HSS wall plastification per AISC 360-22 Table K1.2.
 
 ---
 
@@ -95,8 +100,9 @@
 | **Bolt Bearing / Tearout** | $V$ | $0.75 (C/n) \sum \min(r_v, r_{p,i}, r_{w,i})$ | $0.50 (C/n) \sum \min(r_v, r_{p,i}, r_{w,i})$ | AISC Sec. J3.10 |
 | **Plate Shear Yield / Rupture** | $V$ | $1.00 (0.60 F_y A_{gv})$ / $0.75 (0.60 F_u A_{nv})$ | $0.667 (0.60 F_y A_{gv})$ / $0.50 (0.60 F_u A_{nv})$ | AISC Sec. J4.2 |
 | **Block Shear Rupture** | $V$ | $0.75 R_{n,bs}$ | $0.50 R_{n,bs}$ | AISC Sec. J4.3 |
-| **Shear-Flexure Interaction** | $V, M$ | $(V_u/\phi V_n)^2 + (M_u/\phi M_n)^2 \le 1.0$ | $(V_a/V_a,allow)^2 + (M_a/M_a,allow)^2 \le 1.0$ | AISC Manual Part 10 (Ext.) |
+| **Shear-Flexure Interaction** | $V, M$ | $(V_u/\phi V_n)^2 + (M_u/\phi M_n)^2 \le 1.0$ | $(V_a/V_{a,allow})^2 + (M_a/M_{a,allow})^2 \le 1.0$ | AISC Manual Part 10 (Ext.) |
 | **Double-Sided Fillet Weld** | $w$ | $w \ge \frac{5}{8} t_p$ (`E70XX`) | $w \ge \frac{5}{8} t_p$ (`E70XX`) | AISC Manual Part 10 |
+| **HSS Wall Punching Shear** | $V \cdot e$ | $0.75 (F_{u,HSS} t_{des} d_p^2 / 5)$ | $0.50 (F_{u,HSS} t_{des} d_p^2 / 5)$ | AISC Manual Part 10 (HSS) |
 
 ---
 
@@ -104,6 +110,7 @@
 1. **Exceeding $t_{p,max}$ Causes Brittle Bolt Fracture**: Never arbitrarily thicken a conventional shear tab beyond $d_b/2 + 1/16"$ without checking $t_{p,max} = 6 M_{max} / (F_y d_p^2)$.
 2. **Minimum Horizontal Edge Distance ($L_{eh} \ge 2.0 d_b$)**: Conventional Table 10-9 requires $L_{eh} \ge 2.0 d_b$ on **both** the shear tab and the beam web (beam end setback $c_{setback}$ must be subtracted when checking beam web $L_{eh}$!).
 3. **No Top/Bottom Weld Returns**: Do not wrap fillet welds around the top and bottom edges of a shear tab if it restrains end rotation.
+4. **Through-Plate for Slender HSS Columns**: Never weld a single-plate shear tab directly to a slender HSS column face ($b/t_{des} > 1.40\sqrt{E/F_y}$); detail a through-plate slotted through both HSS walls.
 
 ---
 

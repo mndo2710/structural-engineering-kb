@@ -1,6 +1,6 @@
 ================================================================================
 PROJECT STATE SUMMARY: structural-engineering-kb (US Structural Calculation App)
-Last Updated: 2026-11-15 (Completed Day 14: Wood Connections & Lateral Vertical Slice E2E)
+Last Updated: 2026-11-17 (Updated HSS & Shear Tab Procedures + Rule 5 Load-Path Order in rules.md)
 Auto-Update Rule: Update this file every 3 turns to compress context & save tokens.
 ================================================================================
 
@@ -48,19 +48,23 @@ Auto-Update Rule: Update this file every 3 turns to compress context & save toke
   * Successfully initialized and connected local workspace to GitHub repository `mndo2710/structural-engineering-kb.git`.
   * Packaged, committed, and pushed Day 14 milestone (commit `2b77570`): 233 files, 32,678 insertions across full Knowledge Base, Calculation Engine, Desktop App, Exporters, and Tests.
   * Synchronized local `main` branch with `origin/main` (Up to date).
+- [COMPLETED 100%] Steel Procedures Upgrade & Rule 5 Load-Path Consistency Standard (2026-11-17):
+  * Upgraded `procedures/03_steel_design/steel_hss_to_hss_moment_shear_aisc_workflow.md` (`1wPgJu2YB-EwSJTlIU6nmBq6D1d8jzKqx`) with unified skewed/matched/stepped HSS beam-to-column checks, throat-weighted Table K5.1 weld group, and Sec. H3 torsion interaction (old version backed up in `backup/`).
+  * Upgraded `procedures/03_steel_design/steel_shear_tab_connection_aisc_workflow.md` (`1V6UTtkmWNjIpU1HIAXFXNztsIJJpXx-T`) with explicit AISC Manual Part 10 / Table K1.2 HSS column wall slenderness & punching shear equations (old version backed up in `backup/`).
+  * Updated `rules.md` (`1teDErExvnqyEUHd5YJuz2I2H5aPxJbjd`, Rule 5) to mandate the 4-stage load-path verification order (Geometry/Limits -> Primary Force Transfer -> Connecting Element/Base Metal -> Supporting Member/Global Interaction) and Dual LRFD & ASD parity across all procedures.
 
 3. KEY GOOGLE DRIVE FOLDER & FILE IDs (CACHE FOR ZERO-SEARCH LOOKUP)
 - Reference Library Root (`TCUS`): `1WTG1-B0xZ0GozvfigreJvtLxJI6HnIwQ` (`TCUS/NDS 2024`: `1FOWH4WhSNWjmc-gvuxh2I_uasV537qYk`)
 - App Repo Root (`structural-engineering-kb`): `1tz7tBCDjFtiVpOVvN9MGxpduLx-EA7QO`
   * Active Root Files:
     - `proposed.md` (SAD v1.0 — Authoritative Project Baseline; ONLY update Sec. 2.1 with state_summary.txt)
-    - `rules.md` (`1YV019YOt6GxFoGAm0byItpKLtuDIQKAg` — Master Working Rules)
+    - `rules.md` (`1teDErExvnqyEUHd5YJuz2I2H5aPxJbjd` — Master Working Rules, updated 2026-11-17)
     - `context_guide.txt` (`1ZCzkgeK0gINvbALFzyzxlyaJoJQhyVEs`)
     - `main.py` (`1uAdGSTG_ibtcFniYpE4dPw4dY25jcGIR`)
   * Active Folders in Root:
     - `config/`: `1diBqCuQ_sjBEndCqNctSMxaUn3FulcO0` (`active_code_registry.json`: `1tne4rixrlwW3qQ0slWxl5TN73bae7EGD`, `reference_manifest.json`: `1sE2I3SD4Y3o9hjjqPsIygqQR9p2SZdPQ`)
     - `database/`: `1JRyfJmMXhiXrjiZ4NQwhNS2Il4zEjuZC` (66 verified CSVs)
-    - `procedures/`: `1KDHbmqfs4R3rbPvDPziAClQSHwOBGa33` (26 verified MDs)
+    - `procedures/`: `1KDHbmqfs4R3rbPvDPziAClQSHwOBGa33` (26 verified MDs; `03_steel_design/`: `1DKyoPc6B1L1f-Kqh1vOHwJYxvvksAXvQ`; `steel_hss_to_hss_moment_shear_aisc_workflow.md`: `1wPgJu2YB-EwSJTlIU6nmBq6D1d8jzKqx`; `steel_shear_tab_connection_aisc_workflow.md`: `1V6UTtkmWNjIpU1HIAXFXNztsIJJpXx-T`)
     - `core/`: `1-9nKxCr7GbyovVq5cabrVV6c6nIRy3rR`
       * `common/`: `13tu3_Nmv8KnVyZGY7664hgvcl5xBhFyy`
       * `asce7/`: `1dmUSm_JmXBdDFjD9MAb02PcXkDQ5S61Q` (`wind/`: `1BAPFXL_OC65FTdhNUVt1NBxo63f6Ss98`, `seismic/`: `1n38qBamCh2mVtpWXnuFvBEHbO7sbJpoR`)
@@ -79,7 +83,9 @@ Auto-Update Rule: Update this file every 3 turns to compress context & save toke
     - `backup/`: `168YNvao8onqXfHC-cjcSCWZz0sPnHz7h`
 
 4. COMPONENT PIPELINE ROADMAP (DAY 15 TO DAY 20)
-- [NEXT] Day 15 (Component Pipeline: Steel Connections): `core/aisc360/` (bolts, welds, shear tab, base plate, HSS) + Steel Panel + unit tests.
+- [NEXT] Day 15 (Component Pipeline: Steel Connections):
+  * [COMPLETED] Refreshed `config/reference_manifest.json` SHA-256 hashes & Drive File IDs for updated steel procedures and `rules.md` (92/92 verified, 0 missing, 0 mismatches).
+  * [READY] Implement `core/aisc360/` (bolts, welds, shear tab incl. HSS punching shear, single/double angle, base plate, and unified HSS-to-HSS Dual LRFD/ASD connection checks) + Steel Panel + unit tests.
 - [PENDING] Day 16 (Component Pipeline: Concrete & CMU Anchorage): `core/aci318/` & `core/tms402/` (anchors, CMU breakout, cantilever post) + Anchorage Panel + unit tests.
 - [PENDING] Day 17 (Phase 5: Cloud Synchronization): `CloudSyncService` (Google Drive OAuth 2.0 raw sync, SHA-256 conflict detection, offline cache) + Sync Dialog.
 - [PENDING] Day 18 (Phase 6: Full Engineering Exporters): Finalize 17-col Arial 10pt Excel workbook generator & 12-section ReportLab PDF generator across all modules.

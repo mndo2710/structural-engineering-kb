@@ -1,6 +1,6 @@
 {
   "manifest_version": "1.0.0",
-  "last_updated": "2026-11-14",
+  "last_updated": "2026-11-17",
   "unit_system": "US_Customary",
   "total_csv_tables": 66,
   "total_procedures": 26,
@@ -1288,7 +1288,7 @@
     {
       "reference_id": "PROC-03-Steel-Shear-Tab",
       "file_name": "steel_shear_tab_connection_aisc_workflow.md",
-      "drive_file_id": "1SZscOsnn5H5xoAYk5ZSuW8I25WqQcHy1",
+      "drive_file_id": "1V6UTtkmWNjIpU1HIAXFXNztsIJJpXx-T",
       "relative_path": "procedures/03_steel_design/steel_shear_tab_connection_aisc_workflow.md",
       "code": "AISC_360",
       "edition": "2022",
@@ -1299,7 +1299,7 @@
       "source_reference": "TCUS_StrongTie_SkyCiv",
       "last_verified": "2026-11-14",
       "revision": "1.0",
-      "sha256": "c14d3285249a7156a8b2cace865ee6ee412d6f64f235aa1e91f9e5eb4c6906ad"
+      "sha256": "103f9c6662b2142675bca331e627c73b85ee7e575ee8a29eb298bb8229a8f4b5"
     },
     {
       "reference_id": "PROC-03-Steel-Angle-Shear",
@@ -1320,7 +1320,7 @@
     {
       "reference_id": "PROC-03-Steel-HSS-Connections",
       "file_name": "steel_hss_to_hss_moment_shear_aisc_workflow.md",
-      "drive_file_id": "17z-Sr2ArO2qi4jDyZrPQNHXEyNR2AP2d",
+      "drive_file_id": "1wPgJu2YB-EwSJTlIU6nmBq6D1d8jzKqx",
       "relative_path": "procedures/03_steel_design/steel_hss_to_hss_moment_shear_aisc_workflow.md",
       "code": "AISC_360",
       "edition": "2022",
@@ -1331,7 +1331,7 @@
       "source_reference": "TCUS_StrongTie_SkyCiv",
       "last_verified": "2026-11-14",
       "revision": "1.0",
-      "sha256": "1b5db777e3cb71931b67decc31bac95349a38cdfdd960fb9d69e6d3dc618148c"
+      "sha256": "605cf333ebcd62212733799ae45d6171d685488a68e7c2222a96e63b48de29ae"
     },
     {
       "reference_id": "PROC-04-Concrete-Anchorage",
