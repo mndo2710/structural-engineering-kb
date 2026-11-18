@@ -2,19 +2,21 @@
 
 Conforms to SAD v1.0 Section 6.2 & Master Rules 2, 4, 5.
 Retrieves Kd, Ke, Kz/Kh, and GCpi from verified CSV lookup tables in
-database/asce_7/v7_22/ via KnowledgeBaseService.
+database/asce_7/v7_22/ via ReferenceDataPort.
 """
 
 import math
 import re
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 
-from app.services.knowledge_base_service import KnowledgeBaseService
+from core.common.calculation_result import RefSpec
+from core.common.exceptions import ReferenceDataNotFoundError
 from core.common.validation import (
     validate_in_options,
     validate_non_negative,
     validate_positive,
 )
+from core.ports.reference_data_port import ReferenceDataPort
 
 
 TABLE_26_6_1_FILE = "ASCE7-22_Table_26.6-1.csv"
@@ -23,7 +25,53 @@ TABLE_26_10_1_FILE = "ASCE7-22_Table_26.10-1.csv"
 TABLE_26_13_1_FILE = "ASCE7-22_Table_26.13-1.csv"
 
 
-def lookup_kd(kb: KnowledgeBaseService, structure_type: str = "Components and Cladding") -> float:
+def _build_ref(
+    kb: ReferenceDataPort,
+    code: str,
+    edition: str,
+    kind: str,
+    locator: str,
+    identifier: Optional[str] = None,
+    fallback_path: Optional[str] = None,
+) -> RefSpec:
+    """Resolve a manifest-backed RefSpec cleanly via ReferenceDataPort without inventing IDs."""
+    kb_ref_id: Optional[str] = None
+    source_path: Optional[str] = fallback_path
+    sha256: Optional[str] = None
+
+    if identifier:
+        try:
+            entry = kb.resolve_reference(identifier)
+            kb_ref_id = entry.get("reference_id")
+            source_path = entry.get("relative_path") or source_path
+            sha256 = entry.get("sha256")
+            if not sha256 and source_path:
+                try:
+                    file_path = kb.get_file_path(identifier)
+                    sha256 = kb.compute_sha256(file_path)
+                except Exception:
+                    pass
+        except ReferenceDataNotFoundError:
+            try:
+                file_path = kb.get_file_path(identifier)
+                if source_path is None:
+                    source_path = str(file_path)
+                sha256 = kb.compute_sha256(file_path)
+            except Exception:
+                pass
+
+    return RefSpec(
+        code=code,
+        edition=edition,
+        kind=kind,
+        locator=locator,
+        kb_reference_id=kb_ref_id,
+        source_path=source_path,
+        sha256=sha256,
+    )
+
+
+def lookup_kd(kb: ReferenceDataPort, structure_type: str = "Components and Cladding") -> float:
     """Lookup Wind Directionality Factor Kd from ASCE7-22_Table_26.6-1.csv."""
     df = kb.get_table(TABLE_26_6_1_FILE)
     target = structure_type.strip().lower()
@@ -37,7 +85,7 @@ def lookup_kd(kb: KnowledgeBaseService, structure_type: str = "Components and Cl
     return 0.85
 
 
-def lookup_ke(kb: KnowledgeBaseService, elevation_ft: float = 0.0) -> float:
+def lookup_ke(kb: ReferenceDataPort, elevation_ft: float = 0.0) -> float:
     """
     Lookup Ground Elevation Factor Ke from ASCE7-22_Table_26.9-1.csv
     with linear interpolation across tabulated rows (or Note 2 exact exponential formula).
@@ -75,7 +123,7 @@ def lookup_ke(kb: KnowledgeBaseService, elevation_ft: float = 0.0) -> float:
 
 
 def lookup_kz(
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     height_ft: float,
     exposure: str = "C",
     use_ch28_exp_b_floor: bool = False,
@@ -129,7 +177,7 @@ def lookup_kz(
     return pts[-1][1]
 
 
-def lookup_gcpi(kb: KnowledgeBaseService, enclosure: str = "Enclosed") -> Tuple[float, float]:
+def lookup_gcpi(kb: ReferenceDataPort, enclosure: str = "Enclosed") -> Tuple[float, float]:
     """
     Lookup Internal Pressure Coefficient (GCpi) from ASCE7-22_Table_26.13-1.csv.
     Returns (positive_gcpi, negative_gcpi).
@@ -155,7 +203,7 @@ def lookup_gcpi(kb: KnowledgeBaseService, enclosure: str = "Enclosed") -> Tuple[
 
 
 def calculate_velocity_pressure(
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     v_mph: float,
     z_ft: float,
     exposure: str = "C",

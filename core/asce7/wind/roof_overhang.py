@@ -9,25 +9,43 @@ rafter cantilever moment M_oh and exterior wall hurricane tie uplift reaction R_
 from typing import Any, Dict, List, Optional
 import uuid
 
-from app.services.knowledge_base_service import KnowledgeBaseService
-from core.asce7.wind.c_and_c_pressure import lookup_roof_gcp, lookup_wall_gcp
-from core.asce7.wind.velocity_pressure import calculate_velocity_pressure, lookup_gcpi
+from core.asce7.wind.c_and_c_pressure import (
+    TABLE_C30_3_1_FILE,
+    TABLE_C30_3_2_FILE,
+    lookup_roof_gcp,
+    lookup_wall_gcp,
+)
+from core.asce7.wind.velocity_pressure import (
+    TABLE_26_6_1_FILE,
+    TABLE_26_9_1_FILE,
+    TABLE_26_10_1_FILE,
+    TABLE_26_13_1_FILE,
+    _build_ref,
+    calculate_velocity_pressure,
+    lookup_gcpi,
+)
 from core.common.calculation_result import (
+    AcceptanceCriterion,
+    CalcStep,
     CalculationResult,
     CalculationStatus,
     DesignMethod,
     LimitStateResult,
+    LoadPathStage,
+    Quantity,
+    RefSpec,
 )
 from core.common.validation import (
     validate_design_method,
     validate_non_negative,
     validate_positive,
 )
+from core.ports.reference_data_port import ReferenceDataPort
 
 
 def calculate_roof_overhang_wind(
     inputs: Dict[str, Any],
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     design_method: DesignMethod = DesignMethod.ASD,
     calculation_id: Optional[str] = None,
 ) -> CalculationResult:
@@ -150,6 +168,117 @@ def calculate_roof_overhang_wind(
     gov_ls = max(limit_states, key=lambda x: x.dcr)
     overall_status = CalculationStatus.PASS if all(ls.status == CalculationStatus.PASS for ls in limit_states) else CalculationStatus.FAIL
 
+    ref_proc = _build_ref(
+        kb, "ASCE 7-22", "2022", "procedure", "Roof Overhang Wind Procedure",
+        identifier="cc_wind_overhang_workflow.md",
+        fallback_path="procedures/01_loads_and_seismic/cc_wind_overhang_workflow.md",
+    )
+    ref_t26_6 = _build_ref(kb, "ASCE 7-22", "2022", "table", "Table 26.6-1", identifier=TABLE_26_6_1_FILE)
+    ref_t26_9 = _build_ref(kb, "ASCE 7-22", "2022", "table", "Table 26.9-1", identifier=TABLE_26_9_1_FILE)
+    ref_t26_10 = _build_ref(kb, "ASCE 7-22", "2022", "table", "Table 26.10-1", identifier=TABLE_26_10_1_FILE)
+    ref_t26_13 = _build_ref(kb, "ASCE 7-22", "2022", "table", "Table 26.13-1", identifier=TABLE_26_13_1_FILE)
+    ref_wall = _build_ref(kb, "ASCE 7-22", "2022", "table", "Table C30.3-1", identifier=TABLE_C30_3_1_FILE)
+    ref_roof = _build_ref(kb, "ASCE 7-22", "2022", "table", "Table C30.3-2 / C30.3-3", identifier=TABLE_C30_3_2_FILE)
+    ref_combos = _build_ref(
+        kb, "ASCE 7-22", "2022", "table",
+        "Table 2.4-1" if method == DesignMethod.ASD else "Table 2.3-1",
+        identifier="ASCE7-22_Table_2.3-1_2.4-1_Load_Combinations.csv",
+    )
+
+    trace = (
+        CalcStep(
+            step_id="S1_AREA",
+            stage=LoadPathStage.STAGE_1_GEOMETRY_AND_LIMITS,
+            title="Overhang & Full Rafter Effective Wind Areas",
+            symbolic=r"A_{oh} = \max\left(L_{oh} \cdot s, \frac{L_{oh}^2}{3}\right)",
+            substituted=rf"\max\left({l_oh_ft:.2f} \cdot {spacing_ft:.2f}, \frac{{{l_oh_ft:.2f}^2}}{{3}}\right) = {area_oh_ft2:.2f} \text{{ ft}}^2",
+            variables={
+                "L_oh": Quantity("L_{oh}", l_oh_ft, "ft", "Overhang cantilever length"),
+                "L_back": Quantity("L_{back}", l_back_ft, "ft", "Interior rafter backspan"),
+                "s": Quantity("s", spacing_ft, "ft", "Rafter spacing"),
+                "A_oh": Quantity("A_{oh}", round(area_oh_ft2, 2), "ft^2", "Overhang effective wind area"),
+                "A_rafter": Quantity("A_{rafter}", round(area_rafter_ft2, 2), "ft^2", "Full rafter effective wind area"),
+            },
+            result_value=round(area_oh_ft2, 2),
+            result_unit="ft^2",
+            acceptance=AcceptanceCriterion("info", description="ASCE 7-22 Sec. 26.2 effective wind area", is_dcr_check=False),
+            dcr=None,
+            status=CalculationStatus.PASS,
+            refs=(RefSpec("ASCE 7-22", "2022", "section", "Sec. 26.2 & Sec. 30.7"), ref_proc),
+        ),
+        CalcStep(
+            step_id="S2_QH",
+            stage=LoadPathStage.STAGE_2_PRIMARY_FORCE_TRANSFER,
+            title="Velocity Pressure at Mean Roof Height",
+            symbolic=r"q_h = 0.00256 \cdot K_h \cdot K_{zt} \cdot K_e \cdot V^2",
+            substituted=rf"0.00256 \cdot {vp_res['Kz']:.2f} \cdot {kzt:.2f} \cdot {vp_res['Ke']:.2f} \cdot {v_mph:.1f}^2 = {qh_psf:.2f} \text{{ psf}}",
+            variables={
+                "K_h": Quantity("K_h", vp_res["Kz"], "", "Exposure coefficient at mean roof height"),
+                "K_d": Quantity("K_d", kd, "", "Wind directionality factor"),
+                "V": Quantity("V", v_mph, "mph", "Basic wind speed"),
+            },
+            result_value=qh_psf,
+            result_unit="psf",
+            acceptance=AcceptanceCriterion("info", description="ASCE 7-22 Eq. 26.10-1 velocity pressure", is_dcr_check=False),
+            dcr=None,
+            status=CalculationStatus.PASS,
+            refs=(RefSpec("ASCE 7-22", "2022", "equation", "Eq. 26.10-1"), ref_t26_10, ref_t26_9, ref_t26_6),
+        ),
+        CalcStep(
+            step_id="S2_POH",
+            stage=LoadPathStage.STAGE_2_PRIMARY_FORCE_TRANSFER,
+            title="Combined Overhang & Main Roof Uplift Pressures",
+            symbolic=r"p_{oh} = \max\left(|q_h \cdot K_d \cdot ((GC_p)_{roof}^- - (GC_p)_{wall}^+)|, 16.0\right)",
+            substituted=rf"\max\left(|{qh_psf:.2f} \cdot {kd:.2f} \cdot ({roof_gcp_oh['GCp_neg']:.2f} - {wall_gcp_oh['GCp_pos']:.2f})|, 16.00\right) = {p_oh_uplift_psf:.2f} \text{{ psf}}",
+            variables={
+                "GCp_oh_net": Quantity("(GC_p)_{oh,net}^-", round(gcp_oh_net_neg, 4), "", "Combined overhang pressure coefficient"),
+                "GCp_main_net": Quantity("(GC_p)_{main,net}^-", round(gcp_main_net_neg, 4), "", "Main span net pressure coefficient"),
+                "p_oh": Quantity("p_{oh}", round(p_oh_uplift_psf, 2), "psf", "Overhang uplift pressure"),
+                "p_main": Quantity("p_{main}", round(p_main_uplift_psf, 2), "psf", "Main roof uplift pressure"),
+            },
+            result_value=round(p_oh_uplift_psf, 2),
+            result_unit="psf",
+            acceptance=AcceptanceCriterion(">=", 16.0, "psf", "ASCE 7-22 Sec. 30.2.2 minimum C&C pressure", is_dcr_check=False),
+            dcr=None,
+            status=CalculationStatus.PASS,
+            refs=(RefSpec("ASCE 7-22", "2022", "figure", "Sec. 30.7 & Fig. 30.7-1"), ref_roof, ref_wall, ref_t26_13),
+        ),
+        CalcStep(
+            step_id="S3_MOH",
+            stage=LoadPathStage.STAGE_3_CONNECTING_ELEMENT_AND_BASE_METAL,
+            title="Overhang Cantilever Bending at Wall Plate",
+            symbolic=r"M_{oh} = 0.5 \cdot w_{net,oh} \cdot L_{oh}^2",
+            substituted=rf"0.5 \cdot {w_net_oh_plf:.2f} \cdot {l_oh_ft:.2f}^2 = {m_oh_factored_lb_ft:.2f} \text{{ lb-ft}}",
+            variables={
+                "w_net_oh": Quantity("w_{net,oh}", round(w_net_oh_plf, 2), "plf", "Factored net overhang uplift line load"),
+                "M_cap": Quantity("M_{cap}", round(m_cap, 2), "lb-ft", f"{method.value} rafter flexural capacity"),
+            },
+            result_value=round(m_oh_factored_lb_ft, 2),
+            result_unit="lb-ft",
+            acceptance=AcceptanceCriterion("<=", round(m_cap, 2), "lb-ft", f"{method.value} rafter cantilever moment capacity", is_dcr_check=True),
+            dcr=round(dcr_m, 3),
+            status=CalculationStatus.PASS if dcr_m <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("ASCE 7-22", "2022", "section", "Sec. 30.7"), ref_combos, ref_proc),
+        ),
+        CalcStep(
+            step_id="S4_TIE",
+            stage=LoadPathStage.STAGE_4_SUPPORTING_MEMBER_AND_GLOBAL,
+            title="Rafter-to-Wall Hurricane Tie Uplift",
+            symbolic=r"R_{uplift} = 0.5 \cdot w_{net,main} \cdot L_{back} + w_{net,oh} \cdot L_{oh} \cdot \left(1 + \frac{L_{oh}}{2 \cdot L_{back}}\right)",
+            substituted=rf"0.5 \cdot {w_net_main_plf:.1f} \cdot {l_back_ft:.1f} + {w_net_oh_plf:.1f} \cdot {l_oh_ft:.1f} \cdot \left(1 + \frac{{{l_oh_ft:.1f}}}{{2 \cdot {l_back_ft:.1f}}}\right) = {r_uplift_factored_lbs:.2f} \text{{ lbs}}",
+            variables={
+                "w_net_main": Quantity("w_{net,main}", round(w_net_main_plf, 2), "plf", "Factored net main-span uplift line load"),
+                "R_tie_cap": Quantity("R_{tie,cap}", round(r_tie_cap, 2), "lbs", f"{method.value} hurricane tie uplift capacity"),
+            },
+            result_value=round(r_uplift_factored_lbs, 2),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion("<=", round(r_tie_cap, 2), "lbs", f"{method.value} hurricane tie uplift capacity", is_dcr_check=True),
+            dcr=round(dcr_tie, 3),
+            status=CalculationStatus.PASS if dcr_tie <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("ASCE 7-22", "2022", "figure", "Sec. 30.7 & Fig. 30.7-1"), ref_combos, ref_proc),
+        ),
+    )
+
     warnings = []
     if r_uplift_factored_lbs > 150.0:
         warnings.append(
@@ -209,4 +338,5 @@ def calculate_roof_overhang_wind(
             "procedures/01_loads_and_seismic/cc_wind_overhang_workflow.md",
         ],
         warnings=warnings,
+        trace=trace,
     )

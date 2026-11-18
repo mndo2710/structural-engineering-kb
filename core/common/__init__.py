@@ -1,10 +1,22 @@
 """Core common modules: calculation results, units, load combinations, validation, and exceptions."""
 
 from core.common.calculation_result import (
+    AcceptanceCriterion,
+    CalcStep,
     CalculationResult,
     CalculationStatus,
+    CodeReference,
     DesignMethod,
     LimitStateResult,
+    LoadPathStage,
+    Quantity,
+    RefSpec,
+)
+from core.common.math_markup import (
+    is_valid_math_markup,
+    math_markup_to_plain_text,
+    math_markup_to_rich_html,
+    validate_math_markup,
 )
 from core.common.exceptions import (
     CalculationExecutionError,
@@ -52,11 +64,22 @@ from core.common.validation import (
 )
 
 __all__ = [
-    # Calculation Result
+    # Calculation Result & Structured Trace
+    "AcceptanceCriterion",
+    "CalcStep",
     "CalculationResult",
     "CalculationStatus",
+    "CodeReference",
     "DesignMethod",
     "LimitStateResult",
+    "LoadPathStage",
+    "Quantity",
+    "RefSpec",
+    # Math Markup
+    "validate_math_markup",
+    "is_valid_math_markup",
+    "math_markup_to_plain_text",
+    "math_markup_to_rich_html",
     # Exceptions
     "StructuralEngineeringError",
     "UnitValidationError",

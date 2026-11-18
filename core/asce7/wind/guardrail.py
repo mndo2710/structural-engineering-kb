@@ -9,25 +9,31 @@ and anchor bolt / tension tie force under ASD and LRFD.
 from typing import Any, Dict, List, Optional
 import uuid
 
-from app.services.knowledge_base_service import KnowledgeBaseService
+from core.asce7.wind.velocity_pressure import _build_ref
 from core.common.calculation_result import (
+    AcceptanceCriterion,
+    CalcStep,
     CalculationResult,
     CalculationStatus,
     DesignMethod,
     LimitStateResult,
+    LoadPathStage,
+    Quantity,
+    RefSpec,
 )
 from core.common.validation import (
     validate_design_method,
     validate_non_negative,
     validate_positive,
 )
+from core.ports.reference_data_port import ReferenceDataPort
 
 
 IBC_GUARDRAIL_FILE = "IBC-2024_Section_1607.9_Guardrail_Loads.csv"
 
 
 def lookup_ibc_guardrail_loads(
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     occupancy: str = "R-3_Residential",
 ) -> Dict[str, float]:
     """Lookup IBC Section 1607.9 / ASCE 7-22 Section 4.5.1 guardrail live loads from CSV."""
@@ -63,7 +69,7 @@ def lookup_ibc_guardrail_loads(
 
 def calculate_guardrail_loads(
     inputs: Dict[str, Any],
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     design_method: DesignMethod = DesignMethod.ASD,
     calculation_id: Optional[str] = None,
 ) -> CalculationResult:
@@ -186,6 +192,110 @@ def calculate_guardrail_loads(
     gov_ls = max(limit_states, key=lambda x: x.dcr)
     overall_status = CalculationStatus.PASS if all(ls.status == CalculationStatus.PASS for ls in limit_states) else CalculationStatus.FAIL
 
+    ref_proc = _build_ref(
+        kb, "IBC", "2024", "procedure", "Guardrail & Handrail Loads Procedure",
+        identifier="guardrail_handrail_loads_ibc_workflow.md",
+        fallback_path="procedures/01_loads_and_seismic/guardrail_handrail_loads_ibc_workflow.md",
+    )
+    ref_ibc = _build_ref(kb, "IBC", "2024", "table", "Sec. 1607.9", identifier=IBC_GUARDRAIL_FILE)
+    ref_combos = _build_ref(
+        kb, "ASCE 7-22", "2022", "table",
+        "Table 2.4-1" if method == DesignMethod.ASD else "Table 2.3-1",
+        identifier="ASCE7-22_Table_2.3-1_2.4-1_Load_Combinations.csv",
+    )
+
+    trace = (
+        CalcStep(
+            step_id="S1_GEO",
+            stage=LoadPathStage.STAGE_1_GEOMETRY_AND_LIMITS,
+            title="Guardrail Effective Post Height & Lever Arm",
+            symbolic=r"H_{eff} = \frac{H_{guard} + e_{fas}}{12}",
+            substituted=rf"\frac{{{h_guard_in:.1f} + {e_fas_in:.1f}}}{{12}} = {h_eff_ft:.3f} \text{{ ft}}",
+            variables={
+                "H_guard": Quantity("H_{guard}", h_guard_in, "in.", "Guardrail top rail height"),
+                "e_fas": Quantity("e_{fas}", e_fas_in, "in.", "Fascia attachment offset"),
+                "H_eff": Quantity("H_{eff}", round(h_eff_ft, 3), "ft", "Effective cantilever height"),
+                "S_post": Quantity("S_{post}", s_post_ft, "ft", "Guardrail post spacing"),
+            },
+            result_value=round(h_eff_ft, 3),
+            result_unit="ft",
+            acceptance=AcceptanceCriterion("info", description="2024 IBC Sec. 1607.9 post lever arm geometry", is_dcr_check=False),
+            dcr=None,
+            status=CalculationStatus.PASS,
+            refs=(ref_ibc, ref_proc),
+        ),
+        CalcStep(
+            step_id="S2_LOADS",
+            stage=LoadPathStage.STAGE_2_PRIMARY_FORCE_TRANSFER,
+            title="Governing Live & Wind Guardrail Post Loads",
+            symbolic=r"V_{post,gov} = \max\left(f_L \cdot V_{post,L}, 0.6 \cdot V_{post,W}\right)" if method == DesignMethod.ASD else r"V_{post,gov} = \max\left(1.6 \cdot V_{post,L}, 1.0 \cdot V_{post,W}\right)",
+            substituted=rf"V_{{post,gov}} = {v_post_gov_lbs:.2f} \text{{ lbs}}",
+            variables={
+                "P_conc": Quantity("P_{conc}", p_conc_lbs, "lbs", "Concentrated guardrail live load"),
+                "w_unif": Quantity("w_{unif}", w_unif_plf, "plf", "Uniform guardrail live load"),
+                "V_post_L": Quantity("V_{post,L}", round(v_post_l_lbs, 2), "lbs", "Unfactored live post shear"),
+                "V_post_W": Quantity("V_{post,W}", round(v_post_w_lbs, 2), "lbs", "Unfactored wind post shear"),
+            },
+            result_value=round(v_post_gov_lbs, 2),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion("info", description="Non-concurrent live vs. wind governing post shear", is_dcr_check=False),
+            dcr=None,
+            status=CalculationStatus.PASS,
+            refs=(ref_ibc, RefSpec("ASCE 7-22", "2022", "section", "Sec. 4.5.1"), ref_combos),
+        ),
+        CalcStep(
+            step_id="S3_RAIL",
+            stage=LoadPathStage.STAGE_3_CONNECTING_ELEMENT_AND_BASE_METAL,
+            title="Top Rail Midspan Flexural Bending",
+            symbolic=r"M_{rail} = f_L \cdot \max\left(\frac{P_{conc} \cdot S}{4}, \frac{w_{unif} \cdot S^2}{8}\right)",
+            substituted=rf"{f_l:.1f} \cdot {m_rail_l_lb_ft:.2f} = {m_rail_gov_lb_ft:.2f} \text{{ lb-ft}}",
+            variables={
+                "f_L": Quantity("f_L", f_l, "", f"{method.value} live load factor"),
+                "M_rail_cap": Quantity("M_{rail,cap}", round(m_rail_cap, 2), "lb-ft", f"{method.value} top rail capacity"),
+            },
+            result_value=round(m_rail_gov_lb_ft, 2),
+            result_unit="lb-ft",
+            acceptance=AcceptanceCriterion("<=", round(m_rail_cap, 2), "lb-ft", f"{method.value} top rail flexural capacity", is_dcr_check=True),
+            dcr=round(dcr_rail, 3),
+            status=CalculationStatus.PASS if dcr_rail <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("IBC", "2024", "section", "Sec. 1607.9.1"), ref_ibc, ref_proc),
+        ),
+        CalcStep(
+            step_id="S3_POST",
+            stage=LoadPathStage.STAGE_3_CONNECTING_ELEMENT_AND_BASE_METAL,
+            title="Guardrail Post Flexural Bending at Base",
+            symbolic=r"M_{base} = f_L \cdot V_{post,L} \cdot H_{eff}",
+            substituted=rf"{f_l:.1f} \cdot {v_post_l_lbs:.1f} \cdot {h_eff_ft:.2f} = {m_base_gov_lb_ft:.2f} \text{{ lb-ft}}",
+            variables={
+                "M_post_cap": Quantity("M_{post,cap}", round(m_post_cap, 2), "lb-ft", f"{method.value} post flexural capacity"),
+            },
+            result_value=round(m_base_gov_lb_ft, 2),
+            result_unit="lb-ft",
+            acceptance=AcceptanceCriterion("<=", round(m_post_cap, 2), "lb-ft", f"{method.value} post base flexural capacity", is_dcr_check=True),
+            dcr=round(dcr_post, 3),
+            status=CalculationStatus.PASS if dcr_post <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("IBC", "2024", "section", "Sec. 1607.9.1.1"), ref_combos, ref_proc),
+        ),
+        CalcStep(
+            step_id="S4_BOLT",
+            stage=LoadPathStage.STAGE_4_SUPPORTING_MEMBER_AND_GLOBAL,
+            title="Post Base Anchor Bolt / Tension Tie Pullout",
+            symbolic=r"T_{bolt} = \frac{M_{base} \cdot 12}{N_t \cdot d_{bolt}}",
+            substituted=rf"\frac{{{m_base_gov_lb_ft:.1f} \cdot 12}}{{{n_t_bolts} \cdot {d_bolt_in:.2f}}} = {t_bolt_gov_lbs:.2f} \text{{ lbs}}",
+            variables={
+                "N_t": Quantity("N_t", n_t_bolts, "", "Number of tension bolts"),
+                "d_bolt": Quantity("d_{bolt}", d_bolt_in, "in.", "Tension couple lever arm"),
+                "T_bolt_cap": Quantity("T_{bolt,cap}", round(t_bolt_cap, 2), "lbs", f"{method.value} anchor tension capacity"),
+            },
+            result_value=round(t_bolt_gov_lbs, 2),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion("<=", round(t_bolt_cap, 2), "lbs", f"{method.value} anchor bolt tension capacity", is_dcr_check=True),
+            dcr=round(dcr_bolt, 3),
+            status=CalculationStatus.PASS if dcr_bolt <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("IBC", "2024", "section", "Sec. 1607.9.1 & ASCE 7-22 Sec. 4.5.1"), ref_proc),
+        ),
+    )
+
     warnings = [
         "Detailing Note: Never rely on cross-grain bending of a wood rim joist to resist guardrail post overturning; provide positive mechanical tension ties (e.g., Simpson DTT2Z/HDU2) into floor joists or blocking."
     ]
@@ -241,4 +351,5 @@ def calculate_guardrail_loads(
             "procedures/01_loads_and_seismic/guardrail_handrail_loads_ibc_workflow.md",
         ],
         warnings=warnings,
+        trace=trace,
     )

@@ -24,6 +24,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.registry import ModuleMaturity, ModuleRegistry, get_module_registry
+
 
 class TemplateThumbnailWidget(QWidget):
     """Schematic thumbnail drawing matching engineering calculation templates."""
@@ -193,173 +195,58 @@ class TemplateCardWidget(QFrame):
         super().mousePressEvent(event)
 
 
+def _build_templates_data_from_registry(registry: ModuleRegistry) -> Dict[str, List[Dict[str, Any]]]:
+    """Build catalog cards dictionary directly from ModuleRegistry."""
+    data: Dict[str, List[Dict[str, Any]]] = {}
+    for category, specs in registry.get_catalog_by_category().items():
+        data[category] = []
+        for spec in specs:
+            is_coming_soon = spec.maturity != ModuleMaturity.VERIFIED
+            display_title = f"{spec.title} [COMING SOON]" if is_coming_soon else spec.title
+            data[category].append(
+                {
+                    "id": spec.module_id,
+                    "title": display_title,
+                    "subtitle": spec.subtitle,
+                    "default_name": spec.default_name,
+                    "default_group": spec.default_group,
+                    "preview_type": spec.preview_type,
+                    "maturity": spec.maturity.value,
+                }
+            )
+
+    # Recent category populated from canonical registry entries (ASCE 7-22 Sec. 30.9 for parapet)
+    bolt_spec = registry.resolve("wood_bolt_lateral")
+    parapet_spec = registry.resolve("asce7_parapet_wind")
+    nds_disp = registry.resolve_code_display("wood_bolt_lateral")
+    asce_disp = registry.resolve_code_display("asce7_parapet_wind")
+    data["Recent"] = [
+        {
+            "id": bolt_spec.module_id,
+            "title": bolt_spec.title,
+            "subtitle": f"{nds_disp} Ch. 12 · Recently used in Smith Residence",
+            "default_name": bolt_spec.default_name,
+            "default_group": bolt_spec.default_group,
+            "preview_type": bolt_spec.preview_type,
+            "maturity": bolt_spec.maturity.value,
+        },
+        {
+            "id": parapet_spec.module_id,
+            "title": parapet_spec.title,
+            "subtitle": f"{asce_disp} Sec. 30.9",
+            "default_name": parapet_spec.default_name,
+            "default_group": parapet_spec.default_group,
+            "preview_type": parapet_spec.preview_type,
+            "maturity": parapet_spec.maturity.value,
+        },
+    ]
+    return data
+
+
 class AddCalculationDialog(QDialog):
     """Add Calculation Dialog matching the 3-column mockup architecture."""
 
-    TEMPLATES_DATA = {
-        "Wood (NDS)": [
-            {
-                "id": "wood_bolt_lateral",
-                "title": "Bolt / dowel — lateral",
-                "subtitle": "Single and double shear · yield modes I–IV · NDS Ch. 12",
-                "default_name": "C-06 · Bolt connection",
-                "default_group": "Roof framing",
-                "preview_type": "wood_bolt",
-            },
-            {
-                "id": "wood_nail_lateral",
-                "title": "Nail / wood screw — lateral",
-                "subtitle": "NDS Ch. 12",
-                "default_name": "C-07 · Nail connection",
-                "default_group": "Roof framing",
-                "preview_type": "wood_bolt",
-            },
-            {
-                "id": "wood_screw_withdrawal",
-                "title": "Lag screw / nail — withdrawal",
-                "subtitle": "NDS 12.2",
-                "default_name": "C-08 · Lag screw withdrawal",
-                "default_group": "Roof framing",
-                "preview_type": "wood_bolt",
-            },
-            {
-                "id": "wood_combined_lateral_withdrawal",
-                "title": "Combined lateral + withdrawal",
-                "subtitle": "NDS 12.4",
-                "default_name": "C-09 · Combined fastener check",
-                "default_group": "Roof framing",
-                "preview_type": "wood_bolt",
-            },
-            {
-                "id": "wood_shear_wall_sdpws",
-                "title": "Wood-frame shear wall & holdown",
-                "subtitle": "Unit shear, C_ar, HDU holdown & 3-term drift · SDPWS 2021 Sec. 4.3",
-                "default_name": "SW-01 · Exterior wood shear wall",
-                "default_group": "Level 1",
-                "preview_type": "wood_bolt",
-            },
-            {
-                "id": "wood_diaphragm_sdpws",
-                "title": "Blocked wood diaphragm, chord & collector",
-                "subtitle": "Unit shear, 3-term deflection & Simpson straps · SDPWS 2021 Sec. 4.2",
-                "default_name": "D-01 · Roof diaphragm & collector",
-                "default_group": "Roof framing",
-                "preview_type": "wood_bolt",
-            },
-            {
-                "id": "wood_simpson_hanger_tie",
-                "title": "Simpson joist hanger & hurricane tie",
-                "subtitle": "LUS/HUS/HGUS hangers & H10A/H2.5A multi-axis tie · Simpson C-C-2026",
-                "default_name": "C-09B · Roof girder hanger & tie",
-                "default_group": "Roof framing",
-                "preview_type": "wood_bolt",
-            },
-        ],
-        "Loads (ASCE 7)": [
-            {
-                "id": "asce7_parapet_wind",
-                "title": "Parapet wind pressure",
-                "subtitle": "Component & Cladding net pressure · ASCE 7-22 Sec. 30.9",
-                "default_name": "C-10 · Roof parapet wind",
-                "default_group": "Roof framing",
-                "preview_type": "loads",
-            },
-            {
-                "id": "asce7_roof_overhang",
-                "title": "Roof overhang wind pressure",
-                "subtitle": "Combined top roof + bottom soffit uplift · ASCE 7-22 Sec. 30.7",
-                "default_name": "C-11 · Eaves overhang",
-                "default_group": "Roof framing",
-                "preview_type": "loads",
-            },
-            {
-                "id": "asce7_awning_canopy",
-                "title": "Awning and canopy loads",
-                "subtitle": "Attached canopy wind & Ch. 13 seismic · ASCE 7-22 Sec. 30.11",
-                "default_name": "C-12 · Entry canopy wind",
-                "default_group": "Level 1",
-                "preview_type": "loads",
-            },
-            {
-                "id": "asce7_trellis_loads",
-                "title": "Open-frame trellis & pergola loads",
-                "subtitle": "Open frame drag Cf & post overturning · ASCE 7-22 Sec. 29.4",
-                "default_name": "C-13 · Patio trellis wind",
-                "default_group": "Level 1",
-                "preview_type": "loads",
-            },
-            {
-                "id": "ibc_guardrail_loads",
-                "title": "Guardrail and handrail loads",
-                "subtitle": "200 lb concentrated / 50 plf uniform & wind · 2024 IBC Sec. 1607.9",
-                "default_name": "C-14 · Deck guardrail post",
-                "default_group": "Level 2",
-                "preview_type": "loads",
-            },
-        ],
-        "Steel (AISC)": [
-            {
-                "id": "aisc_shear_tab",
-                "title": "Shear tab (single-plate) connection",
-                "subtitle": "AISC 360-22 Part 10",
-                "default_name": "C-13 · Beam shear tab",
-                "default_group": "Level 2",
-                "preview_type": "steel",
-            },
-            {
-                "id": "aisc_bolt_bearing",
-                "title": "Bolted connection in shear",
-                "subtitle": "AISC 360-22 Section J3",
-                "default_name": "C-14 · Bolted lap splice",
-                "default_group": "Level 2",
-                "preview_type": "steel",
-            },
-            {
-                "id": "aisc_base_plate",
-                "title": "Column base plate & anchor rods",
-                "subtitle": "AISC Design Guide 1 / AISC 360-22",
-                "default_name": "C-15 · HSS base plate",
-                "default_group": "Foundations",
-                "preview_type": "steel",
-            },
-        ],
-        "Concrete / CMU (ACI / TMS)": [
-            {
-                "id": "aci318_anchor_tension_shear",
-                "title": "Cast-in anchor in tension & shear",
-                "subtitle": "ACI 318-19 Chapter 17 breakout & pullout",
-                "default_name": "C-16 · Foundation anchor bolts",
-                "default_group": "Foundations",
-                "preview_type": "concrete",
-            },
-            {
-                "id": "tms402_cmu_anchorage",
-                "title": "CMU anchor bolt breakout",
-                "subtitle": "TMS 402-22 Section 9.1.6",
-                "default_name": "C-17 · CMU wall anchor",
-                "default_group": "Level 2",
-                "preview_type": "concrete",
-            },
-        ],
-        "Recent": [
-            {
-                "id": "wood_bolt_lateral",
-                "title": "Bolt / dowel — lateral",
-                "subtitle": "NDS Ch. 12 · Recently used in Smith Residence",
-                "default_name": "C-06 · Bolt connection",
-                "default_group": "Roof framing",
-                "preview_type": "wood_bolt",
-            },
-            {
-                "id": "asce7_parapet_wind",
-                "title": "Parapet wind pressure",
-                "subtitle": "ASCE 7-22 Section 29.4",
-                "default_name": "C-10 · Roof parapet wind",
-                "default_group": "Roof framing",
-                "preview_type": "loads",
-            },
-        ],
-    }
+    TEMPLATES_DATA = _build_templates_data_from_registry(get_module_registry())
 
     CATEGORY_DISPLAY_HEADERS = {
         "Wood (NDS)": "WOOD CONNECTIONS (NDS)",
@@ -369,8 +256,19 @@ class AddCalculationDialog(QDialog):
         "Recent": "RECENT TEMPLATES",
     }
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(
+        self,
+        parent: Optional[QWidget] = None,
+        registry: Optional[ModuleRegistry] = None,
+        active_item_label: str = "C-02 · Truss heel bolt",
+        default_design_method: str = "ASD",
+    ) -> None:
         super().__init__(parent)
+        self.registry = registry or get_module_registry()
+        self.TEMPLATES_DATA = _build_templates_data_from_registry(self.registry)
+        self._active_item_label = active_item_label
+        self._default_design_method = default_design_method
+
         self.setWindowTitle("Add Calculation")
         self.resize(850, 560)
         self.setMinimumSize(780, 500)
@@ -387,6 +285,16 @@ class AddCalculationDialog(QDialog):
 
         self._setup_ui()
         self._populate_templates()
+
+    def set_active_duplicate_source(self, label: str) -> None:
+        """Update the Duplicate radio label dynamically to match the selected sidebar item."""
+        self._active_item_label = label
+        if label:
+            self.radio_duplicate.setText(f"Duplicate {label}")
+            self.radio_duplicate.setEnabled(True)
+        else:
+            self.radio_duplicate.setText("Duplicate current item")
+            self.radio_duplicate.setEnabled(False)
 
     def _setup_ui(self) -> None:
         root_layout = QVBoxLayout(self)
@@ -586,7 +494,7 @@ class AddCalculationDialog(QDialog):
         lbl_method_title.setStyleSheet("font-size: 11px; font-weight: bold; color: #495057;")
         col3_layout.addWidget(lbl_method_title)
 
-        self.lbl_method_val = QLabel("ASD (from project settings)")
+        self.lbl_method_val = QLabel(f"{self._default_design_method} (from project settings)")
         self.lbl_method_val.setStyleSheet("font-size: 12px; color: #6c757d; margin-bottom: 4px;")
         col3_layout.addWidget(self.lbl_method_val)
 
@@ -599,7 +507,9 @@ class AddCalculationDialog(QDialog):
         self.radio_blank.setChecked(True)
         self.radio_blank.setStyleSheet("font-size: 12px; color: #212529;")
 
-        self.radio_duplicate = QRadioButton("Duplicate C-02 · Truss heel bolt")
+        dup_label = f"Duplicate {self._active_item_label}" if self._active_item_label else "Duplicate current item"
+        self.radio_duplicate = QRadioButton(dup_label)
+        self.radio_duplicate.setEnabled(bool(self._active_item_label))
         self.radio_duplicate.setStyleSheet("font-size: 12px; color: #212529;")
 
         self.btn_group_start_from = QButtonGroup(self)
@@ -663,6 +573,10 @@ class AddCalculationDialog(QDialog):
             }
             QPushButton:pressed {
                 background-color: #0056b3;
+            }
+            QPushButton:disabled {
+                background-color: #adb5bd;
+                color: #f8f9fa;
             }
         """)
         self.btn_add_and_open.clicked.connect(self.accept)
@@ -746,6 +660,13 @@ class AddCalculationDialog(QDialog):
         self.txt_calc_name.setText(template_data.get("default_name", "New Calculation"))
         self.txt_calc_group.setText(template_data.get("default_group", "General"))
 
+        is_verified = template_data.get("maturity", ModuleMaturity.VERIFIED.value) == ModuleMaturity.VERIFIED.value
+        self.btn_add_and_open.setEnabled(is_verified)
+        if not is_verified:
+            self.btn_add_and_open.setToolTip("This module will be enabled in Day 15–16 after engine verification.")
+        else:
+            self.btn_add_and_open.setToolTip("")
+
     def get_calculation_data(self) -> Dict[str, Any]:
         """Return the configuration dictionary for the created calculation."""
         start_from = "blank" if self.radio_blank.isChecked() else "duplicate"
@@ -754,6 +675,7 @@ class AddCalculationDialog(QDialog):
             "group": self.txt_calc_group.text().strip(),
             "template_id": self._active_template.get("id", "wood_bolt_lateral"),
             "category": self._active_category,
-            "design_method": "ASD",
+            "design_method": self._default_design_method,
             "start_from": start_from,
+            "maturity": self._active_template.get("maturity", ModuleMaturity.VERIFIED.value),
         }

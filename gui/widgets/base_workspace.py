@@ -1,4 +1,4 @@
-"""4-Panel Calculation Workspace per SAD v1.0 Section 8.3, 8.4 & Mockup Architecture.
+"""4-Panel Calculation Workspace per SAD v1.1 Section 8 (Frozen UI Contract).
 
 Provides standardized interface panels:
   1. Input Panel (left): Parameter inputs, right-aligned values, Run & Save buttons.
@@ -7,15 +7,14 @@ Provides standardized interface panels:
   4. Summary Panel (bottom right): PASS/FAIL pill badge, governing limit state, DCR gauge, and limit-state table.
 """
 
-from typing import Any, Dict, List, Optional
+import html
+from typing import Any, Dict, List, Optional, Tuple
 from PySide6.QtCore import Qt, Signal, QRectF, QPointF
 from PySide6.QtGui import QColor, QFont, QPainter, QPen, QBrush, QPolygonF
 from PySide6.QtWidgets import (
     QButtonGroup,
-    QComboBox,
     QFormLayout,
     QFrame,
-    QGroupBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -32,7 +31,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.common.calculation_result import CalculationResult, CalculationStatus, DesignMethod
+from app.models import CalculationResult, CalculationStatus, DesignMethod
+from app.rendering import render_calculation_sheet_html
+
+_UNSET = object()
 
 
 class StatusBadgeWidget(QLabel):
@@ -69,7 +71,7 @@ class StatusBadgeWidget(QLabel):
 
 
 class DiagramWidget(QWidget):
-    """Schematic engineering diagram with live dimension annotations matching the mockup."""
+    """Schematic engineering diagram with live dimension annotations."""
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
@@ -77,32 +79,43 @@ class DiagramWidget(QWidget):
         self.setSizeIncrement(1, 1)
         self.setStyleSheet("background-color: #ffffff;")
 
-        # Parametric diagram properties
-        self.p_demand_lb = 340.0
-        self.t_m_in = 1.5
-        self.t_s_in = 1.5
-        self.e_end_m_in = 3.0
-        self.e_end_s_in = 3.0
-        self.bolt_dia_in = 0.625
-        self.c_delta = 0.69
+        # Live-data safe state: no hardcoded result or c_delta fallback
+        self.has_result: bool = False
+        self.p_demand_lb: Optional[float] = None
+        self.t_m_in: Optional[float] = None
+        self.t_s_in: Optional[float] = None
+        self.e_end_m_in: Optional[float] = None
+        self.e_end_s_in: Optional[float] = None
+        self.bolt_dia_in: Optional[float] = None
+        self.c_delta: Optional[float] = None
 
     def update_parameters(
         self,
-        p_demand: float = 340.0,
-        t_m: float = 1.5,
-        t_s: float = 1.5,
-        e_end_m: float = 3.0,
-        e_end_s: float = 3.0,
-        bolt_dia: float = 0.625,
-        c_delta: float = 0.69
+        p_demand: Any = _UNSET,
+        t_m: Any = _UNSET,
+        t_s: Any = _UNSET,
+        e_end_m: Any = _UNSET,
+        e_end_s: Any = _UNSET,
+        bolt_dia: Any = _UNSET,
+        c_delta: Any = _UNSET,
+        has_result: Any = _UNSET,
     ) -> None:
-        self.p_demand_lb = p_demand
-        self.t_m_in = t_m
-        self.t_s_in = t_s
-        self.e_end_m_in = e_end_m
-        self.e_end_s_in = e_end_s
-        self.bolt_dia_in = bolt_dia
-        self.c_delta = c_delta
+        if p_demand is not _UNSET:
+            self.p_demand_lb = p_demand
+        if t_m is not _UNSET:
+            self.t_m_in = t_m
+        if t_s is not _UNSET:
+            self.t_s_in = t_s
+        if e_end_m is not _UNSET:
+            self.e_end_m_in = e_end_m
+        if e_end_s is not _UNSET:
+            self.e_end_s_in = e_end_s
+        if bolt_dia is not _UNSET:
+            self.bolt_dia_in = bolt_dia
+        if c_delta is not _UNSET:
+            self.c_delta = c_delta
+        if has_result is not _UNSET:
+            self.has_result = bool(has_result)
         self.update()
 
     def paintEvent(self, event) -> None:
@@ -158,12 +171,17 @@ class DiagramWidget(QWidget):
         painter.setPen(force_pen)
         painter.setFont(QFont("Segoe UI", 9, QFont.Bold))
 
+        p_text = (
+            f"P = {self.p_demand_lb:.0f} lb"
+            if (self.has_result and self.p_demand_lb is not None)
+            else "P = —"
+        )
+
         # Left arrow <-
         left_arr_x1 = main_rect.left() - 36
         left_arr_x2 = main_rect.left() - 4
         left_arr_y = cy + wood_h * 0.5
         painter.drawLine(int(left_arr_x2), int(left_arr_y), int(left_arr_x1), int(left_arr_y))
-        # Arrowhead
         arr_left = QPolygonF([
             QPointF(left_arr_x1, left_arr_y),
             QPointF(left_arr_x1 + 8, left_arr_y - 4),
@@ -171,47 +189,53 @@ class DiagramWidget(QWidget):
         ])
         painter.setBrush(QBrush(QColor("#d96818")))
         painter.drawPolygon(arr_left)
-        painter.drawText(QRectF(left_arr_x1 - 10, left_arr_y - 20, 80, 16), Qt.AlignLeft, f"P = {self.p_demand_lb:.0f} lb")
+        painter.drawText(QRectF(left_arr_x1 - 10, left_arr_y - 20, 90, 16), Qt.AlignLeft, p_text)
 
         # Right arrow ->
         right_arr_x1 = side_rect.right() + 4
         right_arr_x2 = side_rect.right() + 36
         right_arr_y = cy - wood_h * 0.5
         painter.drawLine(int(right_arr_x1), int(right_arr_y), int(right_arr_x2), int(right_arr_y))
-        # Arrowhead
         arr_right = QPolygonF([
             QPointF(right_arr_x2, right_arr_y),
             QPointF(right_arr_x2 - 8, right_arr_y - 4),
             QPointF(right_arr_x2 - 8, right_arr_y + 4),
         ])
         painter.drawPolygon(arr_right)
-        painter.drawText(QRectF(right_arr_x2 + 4, right_arr_y - 7, 80, 16), Qt.AlignLeft, f"P = {self.p_demand_lb:.0f} lb")
+        painter.drawText(QRectF(right_arr_x2 + 4, right_arr_y - 7, 90, 16), Qt.AlignLeft, p_text)
 
         # Blue Dimension Lines
         dim_pen = QPen(QColor("#007bff"), 1.2)
         painter.setPen(dim_pen)
         painter.setFont(QFont("Segoe UI", 8))
 
+        ts_label = f"ts = {self.t_s_in:.1f} in" if self.t_s_in is not None else "ts = —"
+        tm_label = f"tm = {self.t_m_in:.1f} in" if self.t_m_in is not None else "tm = —"
+        es_label = f"e_end,s = {self.e_end_s_in:.1f} in" if self.e_end_s_in is not None else "e_end,s = —"
+        em_label = f"e_end,m = {self.e_end_m_in:.1f} in" if self.e_end_m_in is not None else "e_end,m = —"
+        if self.c_delta is not None and self.c_delta < 1.0 and self.e_end_m_in is not None:
+            em_label += " (< 7D)"
+
         # Dimension: t_s (side thickness)
         ts_x = side_rect.right() + 6
         painter.drawLine(int(ts_x), int(side_rect.top()), int(ts_x), int(side_rect.bottom()))
         painter.drawLine(int(ts_x - 3), int(side_rect.top()), int(ts_x + 3), int(side_rect.top()))
         painter.drawLine(int(ts_x - 3), int(side_rect.bottom()), int(ts_x + 3), int(side_rect.bottom()))
-        painter.drawText(QRectF(ts_x + 5, side_rect.top(), 80, wood_h), Qt.AlignVCenter | Qt.AlignLeft, f"ts = {self.t_s_in:.1f} in")
+        painter.drawText(QRectF(ts_x + 5, side_rect.top(), 80, wood_h), Qt.AlignVCenter | Qt.AlignLeft, ts_label)
 
         # Dimension: t_m (main thickness)
         tm_x = main_rect.left() + 20
         painter.drawLine(int(tm_x), int(main_rect.top()), int(tm_x), int(main_rect.bottom() + 14))
         painter.drawLine(int(tm_x - 3), int(main_rect.top()), int(tm_x + 3), int(main_rect.top()))
         painter.drawLine(int(tm_x - 3), int(main_rect.bottom()), int(tm_x + 3), int(main_rect.bottom()))
-        painter.drawText(QRectF(tm_x - 45, main_rect.bottom() + 1, 40, 14), Qt.AlignRight, f"tm = {self.t_m_in:.1f} in")
+        painter.drawText(QRectF(tm_x - 50, main_rect.bottom() + 1, 45, 14), Qt.AlignRight, tm_label)
 
         # Dimension: e_end,s (top dimension from bolt to side end)
         top_dim_y = side_rect.top() - 14
         painter.drawLine(int(cx), int(top_dim_y), int(side_rect.right()), int(top_dim_y))
         painter.drawLine(int(cx), int(top_dim_y - 3), int(cx), int(top_dim_y + 3))
         painter.drawLine(int(side_rect.right()), int(top_dim_y - 3), int(side_rect.right()), int(top_dim_y + 3))
-        painter.drawText(QRectF(side_rect.right() + 4, top_dim_y - 8, 120, 16), Qt.AlignLeft, f"e_end,s = {self.e_end_s_in:.1f} in")
+        painter.drawText(QRectF(side_rect.right() + 4, top_dim_y - 8, 120, 16), Qt.AlignLeft, es_label)
 
         # Dimension: e_end,m (bottom dimension from bolt to main member loaded end)
         bot_dim_y = cy + wood_h + 20
@@ -220,26 +244,34 @@ class DiagramWidget(QWidget):
         painter.drawLine(int(main_rect.right()), int(bot_dim_y), int(cx), int(bot_dim_y))
         painter.drawLine(int(main_rect.right()), int(bot_dim_y - 3), int(main_rect.right()), int(bot_dim_y + 3))
         painter.drawLine(int(cx), int(bot_dim_y - 3), int(cx), int(bot_dim_y + 3))
-        painter.drawText(QRectF(cx - 20, bot_dim_y + 4, 150, 16), Qt.AlignLeft, f"e_end,m = {self.e_end_m_in:.1f} in (< 7D)")
+        painter.drawText(QRectF(cx - 20, bot_dim_y + 4, 150, 16), Qt.AlignLeft, em_label)
 
-        # Top-right Pill Note: e_end,m = 3.0 in < 7D = 4.375 in -> C_Delta = 0.69
-        note_text = f"e_end,m = {self.e_end_m_in:.1f} in < 7D = {7.0 * self.bolt_dia_in:.3f} in → C_Δ = {self.c_delta:.2f}"
-        note_w = 260.0
-        note_h = 24.0
-        note_rect = QRectF(w - note_w - 12, 10, note_w, note_h)
+        # Top-right Pill Note: drawn ONLY when engine provides a valid C_Delta value
+        if self.c_delta is not None:
+            if self.e_end_m_in is not None and self.bolt_dia_in is not None:
+                cmp_op = "<" if self.c_delta < 1.0 else "≥"
+                note_text = (
+                    f"e_end,m = {self.e_end_m_in:.1f} in {cmp_op} 7D = {7.0 * self.bolt_dia_in:.3f} in"
+                    f" → C_Δ = {self.c_delta:.2f}"
+                )
+            else:
+                note_text = f"C_Δ = {self.c_delta:.2f}"
+            note_w = 270.0
+            note_h = 24.0
+            note_rect = QRectF(w - note_w - 12, 10, note_w, note_h)
 
-        painter.setPen(QPen(QColor("#ffeeba"), 1))
-        painter.setBrush(QBrush(QColor("#fff3cd")))
-        painter.drawRoundedRect(note_rect, 4, 4)
+            painter.setPen(QPen(QColor("#ffeeba"), 1))
+            painter.setBrush(QBrush(QColor("#fff3cd")))
+            painter.drawRoundedRect(note_rect, 4, 4)
 
-        painter.setPen(QPen(QColor("#856404"), 1))
-        painter.setFont(QFont("Segoe UI", 8, QFont.Bold))
-        painter.drawText(note_rect, Qt.AlignCenter, note_text)
+            painter.setPen(QPen(QColor("#856404"), 1))
+            painter.setFont(QFont("Segoe UI", 8, QFont.Bold))
+            painter.drawText(note_rect, Qt.AlignCenter, note_text)
 
 
 class BaseCalculationWorkspace(QWidget):
     """
-    4-Panel Grid Workspace per SAD v1.0 Section 8.3 & Mockup:
+    4-Panel Grid Workspace per SAD v1.1 Section 8 (Frozen UI Contract):
       - Left column: Panel 1 (INPUTS) + Bottom Actions (Run Calculation & Save Revision)
       - Right column: Panel 2 (DIAGRAM), Panel 3 (CALCULATION SHEET), Panel 4 (SUMMARY)
     """
@@ -247,14 +279,28 @@ class BaseCalculationWorkspace(QWidget):
     calculateRequested = Signal(dict, DesignMethod)
     saveRevisionRequested = Signal(str)
 
-    def __init__(self, module_title: str, default_code: str, parent: Optional[QWidget] = None) -> None:
+    def __init__(
+        self,
+        module_title: str,
+        default_code: str,
+        start_blank: bool = True,
+        parent: Optional[QWidget] = None,
+    ) -> None:
         super().__init__(parent)
         self.module_title = module_title
         self.default_code = default_code
+        self._start_blank = start_blank
         self._current_result: Optional[CalculationResult] = None
         self._design_method = DesignMethod.ASD
+        self._input_edits: Dict[str, QLineEdit] = {}
+        self._active_field_specs: Tuple[Any, ...] = ()
 
         self._setup_ui()
+
+    @property
+    def last_result(self) -> Optional[CalculationResult]:
+        """Compatibility accessor for latest calculation result."""
+        return self._current_result
 
     def _setup_ui(self) -> None:
         main_layout = QHBoxLayout(self)
@@ -318,8 +364,10 @@ class BaseCalculationWorkspace(QWidget):
         self.form_layout.setLabelAlignment(Qt.AlignLeft)
         self.form_layout.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
 
-        # Populate sample input fields matching mockup
-        self._populate_sample_inputs()
+        if self._start_blank:
+            self._populate_blank_inputs()
+        else:
+            self._populate_sample_inputs()
 
         scroll_form.setWidget(self.form_widget)
         card_inputs_layout.addWidget(scroll_form, stretch=1)
@@ -434,9 +482,9 @@ class BaseCalculationWorkspace(QWidget):
         lbl_calc_title.setStyleSheet("font-size: 12px; font-weight: bold; color: #343a40; letter-spacing: 0.5px;")
         card_calc_layout.addWidget(lbl_calc_title)
 
-        # Code basis badge / banner
+        # Code basis badge / banner (never hardcode species or sample data)
         self.lbl_code_basis = QLabel(
-            f"Code basis: {self.default_code} · ASD · Douglas Fir-Larch, G = 0.50 · Knowledge Base verified (SHA-256)"
+            f"Code basis: {self.default_code} · {self._design_method.value} · Knowledge Base verified (SHA-256)"
         )
         self.lbl_code_basis.setStyleSheet("""
             background-color: #f1f8ff;
@@ -465,7 +513,6 @@ class BaseCalculationWorkspace(QWidget):
                 color: #212529;
             }
         """)
-        self._populate_sample_calc_sheet()
         card_calc_layout.addWidget(self.calc_text, stretch=1)
         right_splitter.addWidget(card_calc)
 
@@ -490,10 +537,9 @@ class BaseCalculationWorkspace(QWidget):
         summary_top_bar.setSpacing(12)
 
         self.status_badge = StatusBadgeWidget()
-        self.status_badge.update_status(CalculationStatus.PASS)
         summary_top_bar.addWidget(self.status_badge)
 
-        self.lbl_governing = QLabel("Governing limit state: Bolt lateral yield, Mode II")
+        self.lbl_governing = QLabel("Governing limit state: Not calculated (INCOMPLETE)")
         self.lbl_governing.setStyleSheet("font-size: 13px; font-weight: bold; color: #212529;")
         summary_top_bar.addWidget(self.lbl_governing, stretch=1)
 
@@ -506,7 +552,7 @@ class BaseCalculationWorkspace(QWidget):
 
         self.dcr_bar = QProgressBar()
         self.dcr_bar.setRange(0, 150)
-        self.dcr_bar.setValue(82)
+        self.dcr_bar.setValue(0)
         self.dcr_bar.setTextVisible(False)
         self.dcr_bar.setFixedHeight(8)
         self.dcr_bar.setFixedWidth(130)
@@ -522,7 +568,7 @@ class BaseCalculationWorkspace(QWidget):
         """)
         dcr_container.addWidget(self.dcr_bar)
 
-        self.lbl_dcr_val = QLabel("82% (0.82)")
+        self.lbl_dcr_val = QLabel("—")
         self.lbl_dcr_val.setStyleSheet("font-size: 12px; font-weight: bold; color: #212529;")
         dcr_container.addWidget(self.lbl_dcr_val)
 
@@ -560,7 +606,6 @@ class BaseCalculationWorkspace(QWidget):
                 padding: 4px 6px;
             }
         """)
-        self._populate_sample_table()
         card_summary_layout.addWidget(self.table_limit_states)
 
         right_splitter.addWidget(card_summary)
@@ -575,6 +620,95 @@ class BaseCalculationWorkspace(QWidget):
         main_splitter.setStretchFactor(1, 70)
 
         main_layout.addWidget(main_splitter)
+
+        if self._start_blank:
+            self.clear_to_incomplete()
+        else:
+            self.load_sample_demo()
+
+    def _populate_blank_inputs(self) -> None:
+        """Populate non-numerical placeholder hint for unconfigured blank workspaces."""
+        while self.form_layout.rowCount() > 0:
+            self.form_layout.removeRow(0)
+        self._input_edits.clear()
+        note = QLabel(
+            f"{self.module_title}\nEnter required engineering parameters to evaluate under {self.default_code}."
+        )
+        note.setWordWrap(True)
+        note.setStyleSheet("font-size: 12px; color: #6c757d;")
+        self.form_layout.addRow(note)
+
+    def clear_to_incomplete(self, reason: str = "Enter required inputs and click Run Calculation.") -> None:
+        """Reset Panels 2, 3, and 4 to an explicit, clean INCOMPLETE state (zero sample numbers)."""
+        self._current_result = None
+        self.status_badge.update_status(CalculationStatus.INCOMPLETE)
+        self.dcr_bar.setValue(0)
+        self.dcr_bar.setStyleSheet("""
+            QProgressBar { background-color: #e9ecef; border-radius: 4px; }
+            QProgressBar::chunk { background-color: #28a745; border-radius: 4px; }
+        """)
+        self.lbl_dcr_val.setText("—")
+        self.lbl_governing.setText("Governing limit state: Not calculated (INCOMPLETE)")
+        self.lbl_code_basis.setText(
+            f"Code basis: {self.default_code} · {self._design_method.value} · Knowledge Base verified (SHA-256)"
+        )
+        self.calc_text.setHtml(
+            render_calculation_sheet_html(
+                result=None,
+                code_edition=self.default_code,
+                design_method=self._design_method.value,
+                is_stale=False,
+                incomplete_reasons=(reason,) if reason else (),
+            )
+        )
+        self.ref_text.setHtml("")
+        self.table_limit_states.setRowCount(0)
+
+        if isinstance(self.diagram_widget, DiagramWidget):
+            self.diagram_widget.update_parameters(p_demand=None, c_delta=None, has_result=False)
+
+    def show_invalid_input(self, message: str) -> None:
+        """Display explicit INVALID INPUT state across Summary and Calculation Sheet panels."""
+        self._current_result = None
+        self.status_badge.update_status(CalculationStatus.INVALID_INPUT)
+        self.dcr_bar.setValue(0)
+        self.lbl_dcr_val.setText("—")
+        self.lbl_governing.setText(f"Governing limit state: {message}")
+        self.lbl_code_basis.setText(
+            f"Code basis: {self.default_code} · {self._design_method.value} · Knowledge Base verified (SHA-256)"
+        )
+        self.calc_text.setHtml(
+            f"<p style='color: #6f42c1; font-family: \"Segoe UI\", Arial, sans-serif; font-size: 12px;'>"
+            f"<b>INVALID INPUT:</b> {html.escape(message)}</p>"
+        )
+        self.table_limit_states.setRowCount(0)
+
+        if isinstance(self.diagram_widget, DiagramWidget):
+            self.diagram_widget.update_parameters(p_demand=None, c_delta=None, has_result=False)
+
+    def load_sample_demo(self) -> None:
+        """Populate explicit demonstration fixture values (never used for live blank items)."""
+        self._populate_sample_inputs()
+        self._populate_sample_calc_sheet()
+        self._populate_sample_table()
+        self.status_badge.update_status(CalculationStatus.PASS)
+        self.dcr_bar.setValue(82)
+        self.lbl_dcr_val.setText("82% (0.82)")
+        self.lbl_governing.setText("Governing limit state: Bolt lateral yield, Mode II")
+        self.lbl_code_basis.setText(
+            f"Code basis: {self.default_code} · {self._design_method.value} · Douglas Fir-Larch, G = 0.50 · Knowledge Base verified (SHA-256)"
+        )
+        if isinstance(self.diagram_widget, DiagramWidget):
+            self.diagram_widget.update_parameters(
+                p_demand=340.0,
+                t_m=1.5,
+                t_s=1.5,
+                e_end_m=3.0,
+                e_end_s=3.0,
+                bolt_dia=0.625,
+                c_delta=0.69,
+                has_result=True,
+            )
 
     def _create_form_row(self, label_text: str, value_text: str, is_section: bool = False) -> None:
         if is_section:
@@ -591,6 +725,8 @@ class BaseCalculationWorkspace(QWidget):
         self.form_layout.addRow(lbl, val)
 
     def _populate_sample_inputs(self) -> None:
+        while self.form_layout.rowCount() > 0:
+            self.form_layout.removeRow(0)
         self._create_form_row("Dowel type", "Hex bolt")
         self._create_form_row("Diameter D", "5/8 in")
         self._create_form_row("Shear planes", "Single shear")
@@ -610,7 +746,7 @@ class BaseCalculationWorkspace(QWidget):
         self._create_form_row("P (tension)", "340 lb")
 
     def _populate_sample_calc_sheet(self) -> None:
-        html = """
+        calc_html = """
         <table width="100%" cellpadding="3" cellspacing="0" style="font-family: 'Segoe UI', Arial; font-size: 12px;">
             <tr>
                 <td><b>F<sub>e||</sub></b> = 11,200 &middot; G = 11,200 &times; 0.50 = <b>5,600 psi</b></td>
@@ -622,7 +758,7 @@ class BaseCalculationWorkspace(QWidget):
             </tr>
             <tr>
                 <td>
-                    <b>Z<sub>||</sub></b> = (k<sub>1</sub> &middot; D &middot; &ell;<sub>s</sub> &middot; F<sub>es</sub>) / R<sub>d</sub>
+                    <b>Z<sub>||</sub></b> = (k<sub>1</sub> &middot; D &middot; l<sub>s</sub> &middot; F<sub>es</sub>) / R<sub>d</sub>
                     = (0.414 &times; 0.625 &times; 1.5 &times; 5,600) / 3.60 = <b>604 lb</b>
                 </td>
                 <td align="right" style="color: #007bff; font-weight: 500;">NDS Table 12.3.1A, Mode II</td>
@@ -645,7 +781,7 @@ class BaseCalculationWorkspace(QWidget):
             </tr>
         </table>
         """
-        self.calc_text.setHtml(html)
+        self.calc_text.setHtml(calc_html)
 
     def _populate_sample_table(self) -> None:
         rows = [
@@ -672,6 +808,10 @@ class BaseCalculationWorkspace(QWidget):
             self.radio_asd.setChecked(True)
         else:
             self.radio_lrfd.setChecked(True)
+        if self._current_result is None:
+            self.lbl_code_basis.setText(
+                f"Code basis: {self.default_code} · {self._design_method.value} · Knowledge Base verified (SHA-256)"
+            )
 
     def get_selected_design_method(self) -> DesignMethod:
         if self.radio_lrfd.isChecked():
@@ -680,10 +820,91 @@ class BaseCalculationWorkspace(QWidget):
 
     def get_form_inputs(self) -> Dict[str, Any]:
         """Override in subclasses to gather typed inputs from form controls."""
-        return {}
+        parsed: Dict[str, Any] = {}
+        for k, edit in self._input_edits.items():
+            raw = edit.text().strip()
+            if raw == "":
+                continue
+            try:
+                parsed[k] = float(raw)
+            except ValueError:
+                parsed[k] = raw
+        return parsed
+
+    def validate_and_get_inputs(self) -> Tuple[Dict[str, Any], Optional[CalculationStatus], str]:
+        """
+        Validate form inputs against FieldSpec metadata (if configured) before execution.
+        Returns (parsed_inputs, error_status, error_message).
+        """
+        if not self._input_edits:
+            return self.get_form_inputs(), None, ""
+
+        spec_map = {fld.key: fld for fld in self._active_field_specs}
+        parsed: Dict[str, Any] = {}
+        missing_labels: List[str] = []
+
+        for key, edit in self._input_edits.items():
+            raw = edit.text().strip()
+            fld = spec_map.get(key)
+            fld_label = fld.label if fld else key
+
+            if raw == "":
+                if fld is None or fld.required:
+                    missing_labels.append(key)
+                elif fld.default_value is not None:
+                    parsed[key] = fld.default_value
+                continue
+
+            vtype = fld.value_type if fld else "text"
+            if vtype == "float":
+                try:
+                    val_f = float(raw)
+                except ValueError:
+                    return {}, CalculationStatus.INVALID_INPUT, f"Invalid numeric value for {fld_label} ({key}): '{raw}'"
+                parsed[key] = val_f
+            elif vtype == "int":
+                try:
+                    val_i = int(raw)
+                except ValueError:
+                    return {}, CalculationStatus.INVALID_INPUT, f"Invalid integer value for {fld_label} ({key}): '{raw}'"
+                parsed[key] = val_i
+            elif vtype == "bool":
+                low = raw.lower()
+                if low in ("true", "1", "yes"):
+                    parsed[key] = True
+                elif low in ("false", "0", "no"):
+                    parsed[key] = False
+                else:
+                    return {}, CalculationStatus.INVALID_INPUT, f"Invalid boolean value for {fld_label} ({key}): '{raw}'"
+            else:
+                # Plain text or enum
+                parsed[key] = raw
+
+            # Check numeric bounds from FieldSpec.validation
+            if fld and fld.validation and isinstance(parsed.get(key), (int, float)):
+                num_val = float(parsed[key])
+                if "gt" in fld.validation and not (num_val > float(fld.validation["gt"])):
+                    return {}, CalculationStatus.INVALID_INPUT, f"{fld_label} ({key}) must be > {fld.validation['gt']}"
+                if "ge" in fld.validation and not (num_val >= float(fld.validation["ge"])):
+                    return {}, CalculationStatus.INVALID_INPUT, f"{fld_label} ({key}) must be >= {fld.validation['ge']}"
+                if "lt" in fld.validation and not (num_val < float(fld.validation["lt"])):
+                    return {}, CalculationStatus.INVALID_INPUT, f"{fld_label} ({key}) must be < {fld.validation['lt']}"
+                if "le" in fld.validation and not (num_val <= float(fld.validation["le"])):
+                    return {}, CalculationStatus.INVALID_INPUT, f"{fld_label} ({key}) must be <= {fld.validation['le']}"
+
+        if missing_labels:
+            return {}, CalculationStatus.INCOMPLETE, f"Missing required inputs: {', '.join(missing_labels)}"
+
+        return parsed, None, ""
 
     def _on_calculate_clicked(self) -> None:
-        inputs = self.get_form_inputs()
+        inputs, err_status, err_msg = self.validate_and_get_inputs()
+        if err_status == CalculationStatus.INCOMPLETE:
+            self.clear_to_incomplete(err_msg)
+            return
+        if err_status == CalculationStatus.INVALID_INPUT:
+            self.show_invalid_input(err_msg)
+            return
         method = self.get_selected_design_method()
         self.calculateRequested.emit(inputs, method)
 
@@ -723,30 +944,21 @@ class BaseCalculationWorkspace(QWidget):
         ref_lines = [
             f"<b>Code Edition:</b> {result.code_edition} ({result.design_method.value})",
             f"<b>Reference Files:</b> {', '.join(result.reference_files) if result.reference_files else 'None'}",
-            "<b>Engineering Assumptions:</b>"
+            "<b>Engineering Assumptions:</b>",
         ]
         for a in result.assumptions:
-            ref_lines.append(f" • {a}")
+            ref_lines.append(f" • {html.escape(str(a))}")
         self.ref_text.setHtml("<br>".join(ref_lines))
 
-        # 3. Update Calculation Panel
-        calc_rows = []
-        for k, v in result.intermediate_results.items():
-            calc_rows.append(f"<tr><td><b>{k}</b> = {v}</td><td></td></tr>")
-        for ls in result.limit_states:
-            eq = f"<code>{ls.equation_latex}</code>" if ls.equation_latex else ""
-            sub = f"<br><small>{ls.substitution_str}</small>" if ls.substitution_str else ""
-            calc_rows.append(
-                f"<tr><td><b>{ls.name}</b>: {eq}{sub}</td>"
-                f"<td align='right' style='color: #007bff; font-weight: 500;'>{ls.code_clause}</td></tr>"
+        # 3. Update Calculation Panel via shared offline Math Renderer (WP-7)
+        self.calc_text.setHtml(
+            render_calculation_sheet_html(
+                result=result,
+                code_edition=result.code_edition,
+                design_method=result.design_method.value,
+                is_stale=getattr(result, "is_stale", False),
             )
-
-        html = f"""
-        <table width="100%" cellpadding="3" cellspacing="0" style="font-family: 'Segoe UI', Arial; font-size: 12px;">
-            {''.join(calc_rows)}
-        </table>
-        """
-        self.calc_text.setHtml(html)
+        )
 
         # 4. Update Summary Table
         self.table_limit_states.setRowCount(len(result.limit_states))
@@ -767,8 +979,17 @@ class BaseCalculationWorkspace(QWidget):
                 status_item.setFont(QFont("Segoe UI", 9, QFont.Bold))
             self.table_limit_states.setItem(row, 6, status_item)
 
-        # 5. Update Diagram
-        self.diagram_widget.update_parameters(
-            p_demand=result.demand if result.demand > 0 else 340.0,
-            c_delta=0.69
-        )
+        # 5. Update Diagram strictly from engine results (no hardcoded fallbacks)
+        c_delta = result.intermediate_results.get("C_Delta")
+        p_demand = result.demand
+        if isinstance(self.diagram_widget, DiagramWidget):
+            self.diagram_widget.update_parameters(
+                p_demand=p_demand,
+                t_m=result.input_parameters.get("t_m_in"),
+                t_s=result.input_parameters.get("t_s_in"),
+                e_end_m=result.input_parameters.get("e_end_m_in"),
+                e_end_s=result.input_parameters.get("e_end_s_in"),
+                bolt_dia=result.input_parameters.get("D_in"),
+                c_delta=c_delta,
+                has_result=True,
+            )

@@ -293,9 +293,9 @@ class TestWoodVerticalSlice(unittest.TestCase):
                     "wood_diaphragm_sdpws",
                     "wood_simpson_hanger_tie",
                 ]:
-                    ws.set_module_type(mtype)
-                    self.assertIsNotNone(ws.last_result)
-                    self.assertEqual(ws.last_result.status, CalculationStatus.PASS)
+                    ws.select_submodule(mtype)
+                    self.assertIsNotNone(ws._current_result)
+                    self.assertEqual(ws._current_result.status, CalculationStatus.PASS)
             except ImportError:
                 import ast
                 for gui_file in [

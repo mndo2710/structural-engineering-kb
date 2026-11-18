@@ -1,0 +1,53 @@
+/* Offline Vendored Math Styling for Panel 3 Calculation Sheet (Zero CDN / Network Calls) */
+.katex {
+  font-family: "Cambria Math", "Times New Roman", Georgia, serif;
+  font-size: 1.05em;
+  line-height: 1.35;
+  color: #212529;
+  display: inline-block;
+  vertical-align: middle;
+}
+.katex-display {
+  display: block;
+  margin: 4px 0;
+  text-align: left;
+}
+.katex .mfrac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  margin: 0 3px;
+  font-size: 0.9em;
+  line-height: 1.1;
+}
+.katex .mfrac .num {
+  padding: 0 3px 1px 3px;
+  border-bottom: 1px solid currentColor;
+}
+.katex .mfrac .den {
+  padding: 1px 3px 0 3px;
+}
+.katex .sqrt {
+  display: inline-flex;
+  align-items: stretch;
+  vertical-align: middle;
+  margin: 0 2px;
+}
+.katex .sqrt-sign {
+  font-weight: 600;
+  padding-right: 1px;
+}
+.katex .sqrt-body {
+  border-top: 1px solid currentColor;
+  padding: 1px 3px 0 2px;
+}
+.katex sub,
+.katex sup {
+  font-size: 0.74em;
+  line-height: 0;
+}
+.katex .mtext {
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 0.92em;
+}

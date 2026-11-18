@@ -9,18 +9,24 @@ overturning holdown tension T, boundary post sill bearing, and 3-term horizontal
 from typing import Any, Dict, List, Optional, Tuple
 import uuid
 
-from app.services.knowledge_base_service import KnowledgeBaseService
 from core.common.calculation_result import (
+    AcceptanceCriterion,
+    CalcStep,
     CalculationResult,
     CalculationStatus,
     DesignMethod,
     LimitStateResult,
+    LoadPathStage,
+    Quantity,
+    RefSpec,
 )
 from core.common.validation import (
     validate_design_method,
     validate_non_negative,
     validate_positive,
 )
+from core.nds.fasteners.bolts import _build_nds_ref
+from core.ports.reference_data_port import ReferenceDataPort
 
 
 SDPWS_4_3A_FILE = "SDPWS-2021_Table_4.3A_Shear_Walls.csv"
@@ -28,7 +34,7 @@ SIMPSON_HOLDOWN_FILE = "Simpson_C-C-2026_Holdowns_HDU_HDUE_DTT.csv"
 
 
 def lookup_shear_wall_table_4_3a(
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     sheathing_category: str = "Structural I",
     panel_thickness: str = "15/32",
     nail_size: str = "10d",
@@ -62,7 +68,7 @@ def lookup_shear_wall_table_4_3a(
 
 
 def lookup_simpson_holdown(
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     model_prefix: str = "HDU5-SDS2.5",
     post_thickness_in: float = 3.5,
     species_group: str = "DF/SP",
@@ -105,7 +111,7 @@ def lookup_simpson_holdown(
 
 def calculate_wood_shear_wall(
     inputs: Dict[str, Any],
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     design_method: DesignMethod = DesignMethod.ASD,
     calculation_id: Optional[str] = None,
 ) -> CalculationResult:
@@ -259,6 +265,114 @@ def calculate_wood_shear_wall(
     gov_ls = max(limit_states, key=lambda x: x.dcr)
     overall_status = CalculationStatus.PASS if all(ls.status == CalculationStatus.PASS for ls in limit_states) else CalculationStatus.FAIL
 
+    ref_proc = _build_nds_ref(
+        kb, "SDPWS", "2021", "procedure", "Wood Shear Wall & Holdown Procedure",
+        identifier="wood_shear_wall_holdown_sdpws_workflow.md",
+        fallback_path="procedures/02_wood_design/wood_shear_wall_holdown_sdpws_workflow.md",
+    )
+    ref_t43a = _build_nds_ref(kb, "SDPWS", "2021", "table", "Table 4.3A", identifier=SDPWS_4_3A_FILE)
+    ref_hd = _build_nds_ref(kb, "Simpson", "2026", "catalog", "Holdowns HDU / HDUE / DTT", identifier=SIMPSON_HOLDOWN_FILE)
+
+    shear_sym = r"v \leq \frac{v_s \cdot C_{sp} \cdot C_{ar}}{\Omega}" if method == DesignMethod.ASD else r"v_u \leq \phi_D \cdot v_s \cdot C_{sp} \cdot C_{ar}"
+    shear_sub = rf"\frac{{{v_demand_lbs:.0f}}}{{{bs_ft:.1f}}} = {v_unit_demand_plf:.1f} \text{{ plf}} \leq {v_unit_cap_plf:.1f} \text{{ plf}}"
+
+    trace = (
+        CalcStep(
+            step_id="S1_AR",
+            stage=LoadPathStage.STAGE_1_GEOMETRY_AND_LIMITS,
+            title="Shear Wall Aspect Ratio & Adjustment Factors",
+            symbolic=r"C_{ar} = \min\left(1.00, 1.25 - 0.125 \cdot \frac{h}{b_s}\right)",
+            substituted=rf"\frac{{h}}{{b_s}} = \frac{{{h_ft:.1f}}}{{{bs_ft:.1f}}} = {aspect_ratio:.2f}, C_{{ar}} = {c_ar:.4f}, C_{{sp}} = {c_sp:.2f}",
+            variables={
+                "h": Quantity("h", h_ft, "ft", "Shear wall height"),
+                "b_s": Quantity("b_s", bs_ft, "ft", "Shear wall segment length"),
+                "h_bs": Quantity("h / b_s", round(aspect_ratio, 2), "ratio", "Aspect ratio"),
+                "C_ar": Quantity("C_{ar}", round(c_ar, 4), "", "Aspect ratio adjustment factor"),
+                "C_sp": Quantity("C_{sp}", round(c_sp, 2), "", "Specific gravity adjustment factor"),
+            },
+            result_value=round(aspect_ratio, 2),
+            result_unit="ratio",
+            acceptance=AcceptanceCriterion("<=", 3.5, "ratio", "SDPWS Table 4.3.4 max blocked WSP aspect ratio", is_dcr_check=False),
+            dcr=None,
+            status=CalculationStatus.PASS if aspect_ratio <= 3.5 else CalculationStatus.FAIL,
+            refs=(RefSpec("SDPWS", "2021", "equation", "Eq. 4.3-2 & Table 4.3.4"), ref_proc),
+        ),
+        CalcStep(
+            step_id="S2_SHEAR",
+            stage=LoadPathStage.STAGE_2_PRIMARY_FORCE_TRANSFER,
+            title="Shear Wall In-Plane Unit Shear",
+            symbolic=shear_sym,
+            substituted=shear_sub,
+            variables={
+                "v_s": Quantity("v_s", v_s_nom_plf, "plf", "Nominal unit shear capacity"),
+                "G_a": Quantity("G_a", g_a, "kips/in.", "Apparent shear stiffness"),
+                "v_demand": Quantity("v", round(v_unit_demand_plf, 1), "plf", "Applied unit shear demand"),
+                "v_cap": Quantity("v_{cap}", round(v_unit_cap_plf, 1), "plf", f"{method.value} unit shear capacity"),
+            },
+            result_value=round(v_unit_demand_plf, 1),
+            result_unit="plf",
+            acceptance=AcceptanceCriterion("<=", round(v_unit_cap_plf, 1), "plf", f"{method.value} unit shear capacity", is_dcr_check=True),
+            dcr=round(dcr_shear, 3),
+            status=CalculationStatus.PASS if dcr_shear <= 1.0 else CalculationStatus.FAIL,
+            refs=(ref_t43a, RefSpec("SDPWS", "2021", "section", "Sec. 4.3.3"), ref_proc),
+        ),
+        CalcStep(
+            step_id="S3_HOLD",
+            stage=LoadPathStage.STAGE_3_CONNECTING_ELEMENT_AND_BASE_METAL,
+            title=f"Holdown Uplift ({hd_info['model']})",
+            symbolic=r"T = \frac{V \cdot h - M_R}{b_s} \leq T_{allow}",
+            substituted=rf"\frac{{{m_ot_lb_ft:.0f} - {m_res_lb_ft:.0f}}}{{{bs_ft:.1f}}} = {t_holdown_demand_lbs:.1f} \text{{ lbs}} \leq {t_holdown_cap_lbs:.1f} \text{{ lbs}}",
+            variables={
+                "M_OT": Quantity("M_{OT}", round(m_ot_lb_ft, 1), "lb-ft", "Overturning moment"),
+                "M_R": Quantity("M_R", round(m_res_lb_ft, 1), "lb-ft", "Resisting dead-load moment"),
+                "T_demand": Quantity("T", round(t_holdown_demand_lbs, 1), "lbs", "Net holdown tension demand"),
+                "T_cap": Quantity("T_{allow}", round(t_holdown_cap_lbs, 1), "lbs", f"{method.value} holdown capacity"),
+            },
+            result_value=round(t_holdown_demand_lbs, 1),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion("<=", round(t_holdown_cap_lbs, 1), "lbs", f"{method.value} holdown uplift capacity", is_dcr_check=True),
+            dcr=round(dcr_hd, 3),
+            status=CalculationStatus.PASS if dcr_hd <= 1.0 else CalculationStatus.FAIL,
+            refs=(ref_hd, RefSpec("SDPWS", "2021", "section", "Sec. 4.3.6.1"), ref_proc),
+        ),
+        CalcStep(
+            step_id="S4_BRG",
+            stage=LoadPathStage.STAGE_4_SUPPORTING_MEMBER_AND_GLOBAL,
+            title="Boundary Post Sill Plate Bearing (Fc_perp)",
+            symbolic=r"f_{c\perp} = \frac{C_{ASD}}{A_{post}} \leq F'_{c\perp}",
+            substituted=rf"\frac{{{c_post_asd_lbs:.0f}}}{{{a_post_in2:.2f}}} = {f_c_perp_demand_psi:.1f} \text{{ psi}} \leq {fc_perp_psi:.1f} \text{{ psi}}",
+            variables={
+                "C_ASD": Quantity("C_{ASD}", round(c_post_asd_lbs, 1), "lbs", "ASD boundary post compression"),
+                "A_post": Quantity("A_{post}", a_post_in2, "in.^2", "Boundary post bearing area"),
+                "Fc_perp": Quantity(r"F'_{c\perp}", fc_perp_psi, "psi", "Adjusted perpendicular-to-grain bearing"),
+            },
+            result_value=round(f_c_perp_demand_psi, 1),
+            result_unit="psi",
+            acceptance=AcceptanceCriterion("<=", round(fc_perp_psi, 1), "psi", "NDS Sec. 3.10 sill plate bearing limit", is_dcr_check=True),
+            dcr=round(dcr_brg, 3),
+            status=CalculationStatus.PASS if dcr_brg <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("NDS", "2024", "section", "Sec. 3.10"), ref_proc),
+        ),
+        CalcStep(
+            step_id="S4_DRIFT",
+            stage=LoadPathStage.STAGE_4_SUPPORTING_MEMBER_AND_GLOBAL,
+            title="3-Term Deflection & Seismic Story Drift",
+            symbolic=r"\Delta_{story} = C_d \cdot (\delta_{bend} + \delta_{shear} + \delta_{rot}) \leq 0.025 \cdot h_{sx}",
+            substituted=rf"{cd_seismic:.1f} \cdot ({delta_bend_in:.4f} + {delta_shear_in:.4f} + {delta_rot_in:.4f}) = {story_drift_in:.3f} \text{{ in.}} \leq {allow_drift_in:.3f} \text{{ in.}}",
+            variables={
+                "delta_sw": Quantity(r"\delta_{sw}", round(delta_sw_lrfd_in, 3), "in.", "LRFD 3-term shear wall deflection"),
+                "C_d": Quantity("C_d", cd_seismic, "", "Seismic deflection amplification factor"),
+                "Delta_allow": Quantity(r"\Delta_{allow}", round(allow_drift_in, 3), "in.", "Allowable seismic story drift"),
+            },
+            result_value=round(story_drift_in, 3),
+            result_unit="in.",
+            acceptance=AcceptanceCriterion("<=", round(allow_drift_in, 3), "in.", "ASCE 7-22 Table 12.12-1 drift limit", is_dcr_check=True),
+            dcr=round(dcr_drift, 3),
+            status=CalculationStatus.PASS if dcr_drift <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("SDPWS", "2021", "equation", "Eq. 4.3-1"), RefSpec("ASCE 7-22", "2022", "section", "Sec. 12.12"), ref_proc),
+        ),
+    )
+
     return CalculationResult(
         calculation_id=calc_id,
         module_id="wood_shear_wall_sdpws",
@@ -312,4 +426,5 @@ def calculate_wood_shear_wall(
         warnings=[
             "SDPWS Sec. 4.3.6.4.3 & Table 4.3A Footnote 3: Provide 0.229\" x 3\" x 3\" steel plate washers on sill anchor bolts in SDC D–F, and minimum 3x framing at adjoining panel edges and sill plate where v_s > 700 plf or edge spacing is 2\" o.c."
         ],
+        trace=trace,
     )

@@ -1,25 +1,25 @@
-# Standalone Structural Engineering Calculation Application (V1.0 - SAD Baseline)
+# Standalone Structural Engineering Calculation Application (V1.0 - Pinned Release Lock)
 # Desktop GUI (ADR-02)
-PySide6>=6.6.0
+PySide6==6.12.0
 
 # Deterministic Numerical & Data Operations (Section 4.1)
-pandas>=2.1.0
-numpy>=1.26.0
-scipy>=1.11.0
+pandas==3.0.1
+numpy==2.3.5
+scipy==1.18.1
 
 # Engineering Deliverable Exporters (ADR-08: XLSX & PDF)
-openpyxl>=3.1.2
-XlsxWriter>=3.1.9
-reportlab>=4.0.8
+openpyxl==3.1.5
+XlsxWriter==3.2.9
+reportlab==4.4.9
 
 # Cloud Synchronization - Google Drive API & OAuth 2.0 (ADR-06 & Section 10.5)
-google-api-python-client>=2.108.0
-google-auth>=2.23.0
-google-auth-oauthlib>=1.1.0
-google-auth-httplib2>=0.1.1
-keyring>=24.3.0
+google-api-python-client==2.202.0
+google-auth==2.62.2
+google-auth-oauthlib==1.5.0
+google-auth-httplib2==0.4.4
+keyring==25.7.0
 
 # Engineering Verification, Testing & Windows Packaging (ADR-01 & ADR-10)
-pytest>=7.4.3
-pytest-cov>=4.1.0
-pyinstaller>=6.2.0
+pytest==9.2.0
+pytest-cov==7.1.0
+pyinstaller==6.22.3

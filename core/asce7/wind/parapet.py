@@ -9,25 +9,43 @@ balloon-stud roof diaphragm reaction R_roof under ASD or LRFD.
 from typing import Any, Dict, List, Optional
 import uuid
 
-from app.services.knowledge_base_service import KnowledgeBaseService
-from core.asce7.wind.c_and_c_pressure import lookup_roof_gcp, lookup_wall_gcp
-from core.asce7.wind.velocity_pressure import calculate_velocity_pressure, lookup_gcpi
+from core.asce7.wind.c_and_c_pressure import (
+    TABLE_C30_3_1_FILE,
+    TABLE_C30_3_2_FILE,
+    lookup_roof_gcp,
+    lookup_wall_gcp,
+)
+from core.asce7.wind.velocity_pressure import (
+    TABLE_26_6_1_FILE,
+    TABLE_26_9_1_FILE,
+    TABLE_26_10_1_FILE,
+    TABLE_26_13_1_FILE,
+    _build_ref,
+    calculate_velocity_pressure,
+    lookup_gcpi,
+)
 from core.common.calculation_result import (
+    AcceptanceCriterion,
+    CalcStep,
     CalculationResult,
     CalculationStatus,
     DesignMethod,
     LimitStateResult,
+    LoadPathStage,
+    Quantity,
+    RefSpec,
 )
 from core.common.validation import (
     validate_design_method,
     validate_non_negative,
     validate_positive,
 )
+from core.ports.reference_data_port import ReferenceDataPort
 
 
 def calculate_parapet_wind(
     inputs: Dict[str, Any],
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     design_method: DesignMethod = DesignMethod.ASD,
     calculation_id: Optional[str] = None,
 ) -> CalculationResult:
@@ -173,6 +191,139 @@ def calculate_parapet_wind(
     gov_ls = max(limit_states, key=lambda x: x.dcr)
     overall_status = CalculationStatus.PASS if all(ls.status == CalculationStatus.PASS for ls in limit_states) else CalculationStatus.FAIL
 
+    ref_proc = _build_ref(
+        kb, "ASCE 7-22", "2022", "procedure", "Parapet Wind Procedure",
+        identifier="cc_wind_parapet_workflow.md",
+        fallback_path="procedures/01_loads_and_seismic/cc_wind_parapet_workflow.md",
+    )
+    ref_t26_6 = _build_ref(kb, "ASCE 7-22", "2022", "table", "Table 26.6-1", identifier=TABLE_26_6_1_FILE)
+    ref_t26_9 = _build_ref(kb, "ASCE 7-22", "2022", "table", "Table 26.9-1", identifier=TABLE_26_9_1_FILE)
+    ref_t26_10 = _build_ref(kb, "ASCE 7-22", "2022", "table", "Table 26.10-1", identifier=TABLE_26_10_1_FILE)
+    ref_t26_13 = _build_ref(kb, "ASCE 7-22", "2022", "table", "Table 26.13-1", identifier=TABLE_26_13_1_FILE)
+    ref_wall = _build_ref(kb, "ASCE 7-22", "2022", "table", "Table C30.3-1", identifier=TABLE_C30_3_1_FILE)
+    ref_roof = _build_ref(kb, "ASCE 7-22", "2022", "table", "Table C30.3-2 / C30.3-3", identifier=TABLE_C30_3_2_FILE)
+    ref_combos = _build_ref(
+        kb, "ASCE 7-22", "2022", "table",
+        "Table 2.4-1" if method == DesignMethod.ASD else "Table 2.3-1",
+        identifier="ASCE7-22_Table_2.3-1_2.4-1_Load_Combinations.csv",
+    )
+
+    trace = (
+        CalcStep(
+            step_id="S1_GEO",
+            stage=LoadPathStage.STAGE_1_GEOMETRY_AND_LIMITS,
+            title="Parapet Top Height & Effective Wind Area",
+            symbolic=r"A = h_{par} \cdot \max\left(s, \frac{h_{par}}{3}\right)",
+            substituted=rf"{h_par_ft:.2f} \text{{ ft}} \cdot \max\left({spacing_ft:.2f}, \frac{{{h_par_ft:.2f}}}{{3}}\right) = {area_eff_ft2:.2f} \text{{ ft}}^2",
+            variables={
+                "h_roof": Quantity("h_{roof}", h_roof_ft, "ft", "Mean roof height"),
+                "h_par": Quantity("h_{par}", h_par_ft, "ft", "Parapet height above roof"),
+                "h_p": Quantity("h_p", round(hp_ft, 2), "ft", "Top of parapet height"),
+                "s": Quantity("s", round(spacing_ft, 3), "ft", "Stud spacing"),
+                "A": Quantity("A", round(area_eff_ft2, 2), "ft^2", "Effective wind area"),
+            },
+            result_value=round(area_eff_ft2, 2),
+            result_unit="ft^2",
+            acceptance=AcceptanceCriterion("info", description="ASCE 7-22 Sec. 26.2 effective wind area", is_dcr_check=False),
+            dcr=None,
+            status=CalculationStatus.PASS,
+            refs=(RefSpec("ASCE 7-22", "2022", "section", "Sec. 26.2 & Sec. 30.9"), ref_proc),
+            note=f"Top of parapet height h_p = {hp_ft:.2f} ft",
+        ),
+        CalcStep(
+            step_id="S2_QP",
+            stage=LoadPathStage.STAGE_2_PRIMARY_FORCE_TRANSFER,
+            title="Velocity Pressure at Top of Parapet",
+            symbolic=r"q_p = 0.00256 \cdot K_p \cdot K_{zt} \cdot K_e \cdot V^2",
+            substituted=rf"0.00256 \cdot {kp:.2f} \cdot {kzt:.2f} \cdot {ke:.2f} \cdot {v_mph:.1f}^2 = {qp_psf:.2f} \text{{ psf}}",
+            variables={
+                "K_p": Quantity("K_p", kp, "", "Velocity pressure exposure coefficient"),
+                "K_zt": Quantity("K_{zt}", kzt, "", "Topographic factor"),
+                "K_e": Quantity("K_e", ke, "", "Ground elevation factor"),
+                "K_d": Quantity("K_d", kd, "", "Wind directionality factor"),
+                "V": Quantity("V", v_mph, "mph", "Basic wind speed"),
+            },
+            result_value=qp_psf,
+            result_unit="psf",
+            acceptance=AcceptanceCriterion("info", description="ASCE 7-22 Eq. 26.10-1 velocity pressure", is_dcr_check=False),
+            dcr=None,
+            status=CalculationStatus.PASS,
+            refs=(RefSpec("ASCE 7-22", "2022", "equation", "Eq. 26.10-1"), ref_t26_10, ref_t26_9, ref_t26_6),
+        ),
+        CalcStep(
+            step_id="S2_PRES",
+            stage=LoadPathStage.STAGE_2_PRIMARY_FORCE_TRANSFER,
+            title="Governing C&C Net Parapet Wind Pressure",
+            symbolic=r"p_{gov} = \max\left(p_{net,A}, p_{net,B}, 16.0\right)",
+            substituted=rf"\max\left({p_net_a_psf:.2f}, {p_net_b_psf:.2f}, 16.00\right) = {p_gov_unfactored_psf:.2f} \text{{ psf}}",
+            variables={
+                "GCp_wall_pos": Quantity("(GC_p)_{wall}^+", gcp_wall_pos, "", "Wall positive GCp"),
+                "GCp_roof_neg": Quantity("(GC_p)_{roof}^-", gcp_roof_neg, "", "Roof negative GCp"),
+                "p_net_A": Quantity("p_{net,A}", round(p_net_a_psf, 2), "psf", "Case A windward pressure"),
+                "p_net_B": Quantity("p_{net,B}", round(p_net_b_psf, 2), "psf", "Case B leeward pressure"),
+                "p_gov": Quantity("p_{gov}", round(p_gov_unfactored_psf, 2), "psf", "Governing C&C pressure"),
+            },
+            result_value=round(p_gov_unfactored_psf, 2),
+            result_unit="psf",
+            acceptance=AcceptanceCriterion(">=", 16.0, "psf", "ASCE 7-22 Sec. 30.2.2 minimum C&C pressure", is_dcr_check=False),
+            dcr=None,
+            status=CalculationStatus.PASS,
+            refs=(RefSpec("ASCE 7-22", "2022", "section", "Sec. 30.9 & Sec. 30.2.2"), ref_wall, ref_roof, ref_t26_13),
+            note=f"MWFRS windward p_p = {pp_windward_psf:.2f} psf; Cladding max p = {p_cladding_max_psf:.2f} psf",
+        ),
+        CalcStep(
+            step_id="S3_MOM",
+            stage=LoadPathStage.STAGE_3_CONNECTING_ELEMENT_AND_BASE_METAL,
+            title="Parapet Cantilever Base Moment",
+            symbolic=r"M_{base} = 0.5 \cdot (f_W \cdot p_{gov} \cdot s) \cdot h_{par}^2",
+            substituted=rf"0.5 \cdot ({wind_factor:.1f} \cdot {p_gov_unfactored_psf:.2f} \cdot {spacing_ft:.2f}) \cdot {h_par_ft:.2f}^2 = {m_base_lb_ft:.2f} \text{{ lb-ft}}",
+            variables={
+                "f_W": Quantity("f_W", wind_factor, "", f"{method.value} wind load factor"),
+                "w_factored": Quantity("w_f", round(w_factored_plf, 2), "plf", "Factored line load on parapet stud"),
+                "M_cap": Quantity("M_{cap}", round(m_cap, 2), "lb-ft", f"{method.value} flexural capacity"),
+            },
+            result_value=round(m_base_lb_ft, 2),
+            result_unit="lb-ft",
+            acceptance=AcceptanceCriterion("<=", round(m_cap, 2), "lb-ft", f"{method.value} parapet base moment capacity", is_dcr_check=True),
+            dcr=round(dcr_m, 3),
+            status=CalculationStatus.PASS if dcr_m <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("ASCE 7-22", "2022", "section", "Sec. 30.9 & Sec. 2.4.1" if method == DesignMethod.ASD else "Sec. 30.9 & Sec. 2.3.1"), ref_combos, ref_proc),
+        ),
+        CalcStep(
+            step_id="S3_SHR",
+            stage=LoadPathStage.STAGE_3_CONNECTING_ELEMENT_AND_BASE_METAL,
+            title="Parapet Cantilever Base Shear",
+            symbolic=r"V_{base} = (f_W \cdot p_{gov} \cdot s) \cdot h_{par}",
+            substituted=rf"({wind_factor:.1f} \cdot {p_gov_unfactored_psf:.2f} \cdot {spacing_ft:.2f}) \cdot {h_par_ft:.2f} = {v_base_lbs:.2f} \text{{ lbs}}",
+            variables={
+                "V_cap": Quantity("V_{cap}", round(v_cap, 2), "lbs", f"{method.value} shear capacity"),
+            },
+            result_value=round(v_base_lbs, 2),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion("<=", round(v_cap, 2), "lbs", f"{method.value} parapet base shear capacity", is_dcr_check=True),
+            dcr=round(dcr_v, 3),
+            status=CalculationStatus.PASS if dcr_v <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("ASCE 7-22", "2022", "equation", "Eq. 30.9-1"), ref_proc),
+        ),
+        CalcStep(
+            step_id="S4_REACT",
+            stage=LoadPathStage.STAGE_4_SUPPORTING_MEMBER_AND_GLOBAL,
+            title="Balloon-Stud Roof Diaphragm Reaction",
+            symbolic=r"R_{roof} = V_{base} \cdot \left(1 + \frac{h_{par}}{2 \cdot L_{back}}\right)",
+            substituted=rf"{v_base_lbs:.2f} \cdot \left(1 + \frac{{{h_par_ft:.2f}}}{{2 \cdot {backspan_ft:.2f}}}\right) = {r_roof_lbs:.2f} \text{{ lbs}}",
+            variables={
+                "L_back": Quantity("L_{back}", backspan_ft, "ft", "Interior stud backspan length"),
+                "R_cap": Quantity("R_{cap}", round(r_cap, 2), "lbs", f"{method.value} diaphragm attachment capacity"),
+            },
+            result_value=round(r_roof_lbs, 2),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion("<=", round(r_cap, 2), "lbs", f"{method.value} diaphragm connection capacity", is_dcr_check=True),
+            dcr=round(dcr_r, 3),
+            status=CalculationStatus.PASS if dcr_r <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("ASCE 7-22", "2022", "section", "Sec. 30.9 (Continuous Stud)"), ref_proc),
+        ),
+    )
+
     warnings: List[str] = []
     if h_par_ft >= 3.0 and roof_slope_deg <= 7.0 and "3" in roof_zone:
         warnings.append(
@@ -244,4 +395,5 @@ def calculate_parapet_wind(
             "procedures/01_loads_and_seismic/cc_wind_parapet_workflow.md",
         ],
         warnings=warnings,
+        trace=trace,
     )

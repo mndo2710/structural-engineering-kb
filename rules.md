@@ -1,15 +1,16 @@
 # MASTER WORKING RULES & ENGINEERING CONVENTIONS (`rules.md`)
-**Project:** `structural-engineering-kb` (Standalone US Structural Engineering Calculation Application) 
-**Last Updated:** November 17, 2026 
+**Project:** `structural-engineering-kb` (Standalone US Structural Engineering Calculation Application)  
+**Last Updated:** November 17, 2026 (Synchronized with Consolidated Architecture Proposal `1KlEES_QYXMFnwYAKwqdathM7LalXiBq8`)  
 **Status:** Locked & Active (Auto-updated upon explicit user instruction)
 
 ---
 
 ## RULE 1: AUTHORITATIVE PROJECT DIRECTION & CHANGE CONTROL
-- **Primary Architecture Baseline:** `proposed.md` (*Software Architecture Document — SAD v1.0*) is the single authoritative design and roadmap specification for the project.
+- **Primary Architecture & Roadmap Baseline:**
+  - `proposed.md` (*Software Architecture Document — SAD v1.1*) and `proposal/Structural_Calculation_App_Consolidated_Architecture_Proposal.md` (`1KlEES_QYXMFnwYAKwqdathM7LalXiBq8`) together form the single authoritative design, refactoring, and V1.0 completion specification for the project.
 - **Strict Change Control:**
   - Only **Section `2.1 Existing Project Status`** in `proposed.md` may be updated automatically in parallel with `state_summary.txt` to reflect completed work packages and repository inventory.
-  - **No other section of `proposed.md`, nor any existing locked file or architectural decision, may be modified, overwritten, or deleted without explicit permission from the user.**
+  - **No other section of `proposed.md`, `proposal/Structural_Calculation_App_Consolidated_Architecture_Proposal.md`, nor any existing locked file or architectural decision, may be modified, overwritten, or deleted without explicit permission from the user.**
 - **Living Rules Update Policy:** Whenever the user establishes a new working rule or modifies an existing rule in chat, `rules.md`, `state_summary.txt`, and persistent agent memory must be updated immediately.
 
 ---
@@ -30,10 +31,10 @@
   - `mime_type="application/octet-stream"`
   - Files must remain raw binary/text files for direct desktop synchronization and must **never** be auto-converted into Google Docs or Google Sheets.
 - **Backup & Clean Workspace Discipline (`backup/`):**
-  - Before replacing any active file on Google Drive (`state_summary.txt`, `proposed.md`, `README.md`, `app_settings.json`, etc.), rename the superseded version with a `_backup` suffix and move it into the `backup/` folder (`168YNvao8onqXfHC-cjcSCWZz0sPnHz7h`).
+  - Before replacing any active file on Google Drive (`state_summary.txt`, `proposed.md`, `rules.md`, `AGENTS.md`, `README.md`, `app_settings.json`, etc.), rename the superseded version with a `_backup` suffix and move it into the `backup/` folder (`168YNvao8onqXfHC-cjcSCWZz0sPnHz7h`).
   - Move all obsolete drafts, duplicate files, or converted GDocs/GSheets into `backup/` so active project folders remain 100% clean.
 - **Rolling State Summary & Token Optimization (`state_summary.txt`):**
-  - Update `/structural-engineering-kb/state_summary.txt` (and Section `2.1` of `proposed.md`) every 3 turns or upon milestone completion.
+  - Update `/structural-engineering-kb/state_summary.txt` (and Section `2.1` of `proposed.md`) every 3 turns or upon milestone/work-package completion.
   - Cache all verified Google Drive Folder IDs and File IDs inside `state_summary.txt` and `config/reference_manifest.json` for zero-search lookup, avoiding redundant directory scans.
 
 ---
@@ -62,12 +63,12 @@
   5. **Section 5: Supporting Member / Global Substrate Verification** (Supporting wall, slab edge, rafter back-span, or footing/pier checks).
   6. **Section 6: Mandatory Detailing & Construction Notes** (Material grades, weldability ASTM A706 / AWS D1.4, fastener rules, minimum edge distances).
   7. **Section 7: Summary Calculation & Detailing Checklist Table** (4 columns: `Step`, `Design Verification Item`, `Governing Code Reference`, `Limit State / Acceptance Equation`).
-- **Standardized Load-Path Verification Sequence (Mandatory Consistency Across Procedures):** Within Section 4 (and across Sections 3–5), every procedure must follow this 4-stage load-path order (while allowing the exact number of sub-steps to adapt to connection mechanics):
+- **Standardized Load-Path Verification Sequence (Mandatory Consistency Across Procedures & `CalcStep` Traces):** Within Section 4 (and across Sections 3–5 and `CalcStep.stage`), every procedure and calculation trace must follow this 4-stage load-path order:
   1. *Stage 1 — Geometry, Detailing & Applicability Limits:* Verify section compactness/slenderness, $t_{des}$, Chapter K limits, hole spacing/edge distances, or weld size limits ($w_{min}, w_{max}$).
   2. *Stage 2 — Primary Force-Transfer Mechanism:* Check the primary load-transferring element (bolt shear/tension/eccentricity, weld throat capacity, HSS face plastification/punching/sidewall checks, or concrete bearing).
   3. *Stage 3 — Connecting Element & Base Metal Limit States:* Check affected plate/angle/base-metal yielding, net rupture, block shear, shear-flexure interaction, or prying action.
   4. *Stage 4 — Supporting Member / Global Substrate & Combined Interaction:* Check supporting member web/HSS wall punching shear, panel zone shear, torsion interaction (Eq. H3-6), or concrete/masonry breakout.
-- **Dual LRFD & ASD Parity:** Every `.md` procedure in `procedures/` must present parallel LRFD ($\phi R_n$) and ASD ($R_n / \Omega$) capacities at every check without mixing load or resistance factors.
+- **Dual LRFD & ASD Parity:** Every `.md` procedure in `procedures/` and every `core/` engine module must support parallel LRFD ($\phi R_n$) and ASD ($R_n / \Omega$) evaluations without mixing load or resistance factors.
 
 ---
 
@@ -77,7 +78,7 @@
   - Font: **Arial, 10pt**, row height `18.0 pt`, explicit `vertAlign="baseline"` on all normal text/symbol runs so sub/superscripts do not shift baseline alignment.
   - Zero borders in calculation body; blue font for user inputs; dropdown validation linked to the `Database` tab via `VLOOKUP`/`INDEX-MATCH`.
   - Root expressions formatted as power superscripts `(a)^(1/2)`; multiplication formatted with `.`.
-  - **3-Tab Workbook Architecture:** `Calc_Sheet` (displaying `Equation -> Substitution -> Result -> Limit -> DCR`), `Database`, and automated `Source_Audit`.
+  - **3-Tab Workbook Architecture:** `Calc_Sheet` (displaying `Equation -> Substitution -> Result -> Limit -> DCR`), `Database` (with resilient multi-header CSV parsing so zero referenced tables are skipped), and automated `Source_Audit`.
 - **Two-Stage Delivery Workflow (when generating custom calculation sheets in chat):** Stage 1 presents a Markdown preview of the calculation flow for user confirmation; Stage 2 delivers the verified `.xlsx` file.
 
 ---
@@ -89,8 +90,16 @@
 
 ---
 
-## RULE 8: STANDALONE DESKTOP APP IMPLEMENTATION RULES (`proposed.md` V1)
-- **Deterministic Calculation First:** Python functions in `core/` perform all engineering calculations; Markdown files in `procedures/` are reference documentation only and are never executed as code.
-- **No AI in V1 Runtime:** V1 desktop application runs 100% independently offline/cloud-connected without any Gemini or LLM API dependency.
-- **Strict Layer Separation:** `gui/` (`PySide6`) communicates only with `app/services/` (`ProjectService`, `CalculationService`, `KnowledgeBaseService`, `ValidationService`, `ReportService`, `CloudSyncService`, `SettingsService`, `HistoryService`), never directly with `core/` equations or Google Drive APIs.
-- **Explicit Statuses & Traceability:** Every calculation returns a standardized `CalculationResult` object (`PASS`, `FAIL`, `REQUIRES REVIEW`, `INCOMPLETE`, `INVALID INPUT`) stored with full revision history in SQLite (`storage/projects/structural_app.sqlite3`).
+## RULE 8: STANDALONE DESKTOP APP & CONSOLIDATED ARCHITECTURE RULES (`proposed.md` v1.1 & `Consolidated Proposal`)
+- **UI Freeze (Non-Negotiable):** The approved PySide6 4-panel workspace (`Panel 1 — INPUTS` left 280–380 px; `Panel 2 — DIAGRAM` top-right; `Panel 3 — CALCULATION SHEET` middle-right with equations and code references integrated inline; `Panel 4 — SUMMARY` bottom-right), header bar (`ASD | LRFD` segmented toggle), collapsible sidebar (232 px expanded / 48 px rail, ~120 ms animation), and 3-column `Add Calculation` dialog are visually frozen. Never add a 5th panel or alter visual layout/styling.
+- **Clean Architecture & Dependency Direction:**
+  - `gui/` imports only `app/` (`app/controllers/`, `app/services/`, `app/models/`, `app/rendering/`), never `core/`, `storage/`, `cloud/`, or `exporters/`.
+  - `core/` contains pure deterministic engineering calculations and depends only on `core/common/` and `core/ports/` (`ReferenceDataPort`); `core/` must never import `gui/` or concrete `app/services/` implementations.
+- **Single ModuleRegistry, Structured `CalcStep` Trace & Typed `DiagramSpec`:**
+  - `app/registry/` (`ModuleRegistry`, `ModuleSpec`, `FieldSpec`) is the single source of truth for dialog templates, input forms, engine dispatch, maturity gating (`verified`, `preview`, `coming_soon`, `unavailable`), and diagram builders.
+  - Calculation engines emit structured `CalculationResult.trace` (`CalcStep`, `Quantity`, `RefSpec`) consumed identically by Panel 3 (offline vendored KaTeX with rich-text fallback), PDF (`ReportLab`), and XLSX (`openpyxl`).
+  - Panel 2 draws from a Qt-independent `DiagramSpec`; geometry redraws immediately on input edits while derived forces come strictly from the deterministic engine.
+- **Project-Scoped Item Lifecycle, Zero Sample Defaults & Stale Flag:**
+  - Required engineering inputs start blank on a new item (`INCOMPLETE` status, empty Calculation Sheet). Never display sample/mockup numbers or hardcoded fallbacks (`c_delta = 0.69`) as live user calculation outputs.
+  - `Run Calculation` computes an in-memory result without creating a revision; `Save Revision` writes an immutable SQLite revision with reference SHA-256 hash and code-edition snapshots.
+  - Keep the 5 locked statuses (`PASS`, `FAIL`, `REQUIRES REVIEW`, `INCOMPLETE`, `INVALID INPUT`) and track outdated results via a separate `is_stale` flag in SQLite Schema v2 (`PRAGMA user_version = 2`).

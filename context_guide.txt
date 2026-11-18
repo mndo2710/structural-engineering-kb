@@ -1,58 +1,82 @@
 ================================================================================
 CORE CONTEXT FILES USAGE GUIDE - PROJECT structural-engineering-kb
-Last Updated: 2026-11-14
+Last Updated: 2026-11-18 (V1.0 Multi-Discipline & Packaging Sync)
 Google Drive Root Folder ID: 1tz7tBCDjFtiVpOVvN9MGxpduLx-EA7QO
 ================================================================================
 
-1. ROLES OF THE 3 CORE CONTEXT FILES
+1. ROLES OF THE CORE GOVERNANCE & ARCHITECTURE CONTEXT FILES
 --------------------------------------------------------------------------------
-1) state_summary.txt (State Context - Project Progress & ID Registry)
-   - File ID: 1R0GaU-5zKJaNllUXudJYObH8VFlr9oOl
-   - Role: Tracks current development progress, completed/pending work packages,
-     and cached Google Drive Folder/File IDs for zero-search lookup.
-   - Update Frequency: Automatically updated every 3 turns or upon milestone
-     completion.
+1) state_summary.txt (State Context - Project Progress & Drive ID Registry)
+   - Role: Tracks current development progress, completed/pending work packages
+     (Phase 0 / WP-0 through Phase 10 / Day 20), and cached Google Drive
+     Folder/File IDs for zero-search lookup.
+   - Update Frequency: Automatically updated every 3 turns or upon work-package
+     completion by the Primary Agent.
 
 2) rules.md (Constraint Context - Mandatory Working Rules)
-   - File ID: 1YV019YOt6GxFoGAm0byItpKLtuDIQKAg
+   - File ID: 1lwPHMwXqP2KQoItQH8g6slJy9IKpcOxM
    - Role: Locks all 8 core working rule groups (ASD/LRFD separation,
-     US Customary units, CSV/7-section Markdown/17-column Arial 10pt Excel
-     standards, raw Google Drive sync, backup/ cleanup discipline, and
-     concise Plan Check response formatting).
+     US Customary units, CSV/7-section Markdown/4-stage Load-Path/17-column
+     Arial 10pt Excel standards, raw Google Drive sync, backup/ cleanup
+     discipline, Plan Check formatting, Frozen 4-Panel UI, and Clean
+     Architecture contracts).
    - Update Frequency: Updated immediately whenever the user adds or modifies
      a working rule.
 
-3) proposed.md (Architectural Context - Software Architecture Document v1.0)
-   - File ID: 15kJVFqyGOWWIvIzeO3Eu4v4ANxqIUwc3
+3) proposed.md (Architectural Context - Software Architecture Document v1.1)
+   - File ID: 1HSg-xqOuK0hY3flT2hAwBdveXAx-Kj3f
    - Role: Authoritative V1 Windows Desktop application specification
-     (PySide6 GUI, SQLite project storage, Google Drive OAuth 2.0 sync,
-     openpyxl XLSX & ReportLab PDF exporters, 5-level pytest verification,
-     and zero AI/LLM integration in V1 runtime).
+     (Frozen 4-panel PySide6 GUI, Clean Architecture / ReferenceDataPort,
+     ModuleRegistry, WorkspaceController, CalcStep trace, DiagramSpec,
+     SQLite Schema v2 project storage, Google Drive OAuth 2.0 raw KB sync,
+     openpyxl XLSX & ReportLab PDF exporters, 8-category verification, and
+     zero AI/LLM integration in V1 runtime).
    - Edit Policy: ONLY Section "2.1 Existing Project Status" may be updated in
      parallel with state_summary.txt; DO NOT modify any other section without
      explicit user permission.
 
-2. TOKEN-OPTIMIZED CONTEXT LOADING FOR NEW SESSIONS
---------------------------------------------------------------------------------
-- Step 1 (Default Session Kickoff): Load ONLY `state_summary.txt` + `rules.md`
-  to restore project state, cached Drive IDs, and locked conventions with
-  minimal token overhead.
-- Step 2 (On-Demand Architectural Lookup): Read ONLY the relevant section of
-  `proposed.md` when implementing its corresponding module (avoid loading the
-  entire ~45 KB file on every prompt):
-  * Sections 5 & 7 : KnowledgeBaseService & Application Service Layer
-  * Section 6      : Calculation Engine (`core/`) & `CalculationResult`
-  * Section 8      : PySide6 Desktop GUI (`gui/`) & 4-Panel Workspace
-  * Section 9      : SQLite Database (`storage/projects/`) & Revision History
-  * Section 10     : CloudSyncService (Google Drive API, OAuth 2.0, Cache)
-  * Section 11     : Export Engine (`exporters/`: XLSX & ReportLab PDF)
-  * Section 12     : 5-Level Testing (`tests/`: Unit, Reference, Benchmark, E2E)
+4) proposal/Structural_Calculation_App_Consolidated_Architecture_Proposal.md
+   - File ID: 1KlEES_QYXMFnwYAKwqdathM7LalXiBq8 (Folder ID: 1VggHm-vqTQvyVcVQ0uoSc44utEy4x_7V)
+   - Role: Approved Consolidated Architecture Review, Change Proposal & V1.0
+     Completion Roadmap defining Findings F-01..F-22, Decisions D-1..D-8,
+     Work Packages WP-0..WP-11 / Phases 0..10, and the Section 16 V1.0
+     Final Acceptance Checklist.
 
-3. DEVELOPMENT CONTEXT VS. V1 RUNTIME DISTINCTION
+5) AGENTS.md & .agents/agents/*.md (Agent Role & Lane Definitions)
+   - AGENTS.md File ID: 1wlUPLviMPUXT9oUT8ngLi-bCFfYNSSYz
+   - Subagents Folder ID (.agents/agents/): 1NeqXvcDFz2f0GH19xMwUo0zP8NR-cksU
+     * desktop-app.md        : 1hGahCX9T_nTZlDHRLcYjTSWfLwTJOokf
+     * calculation-engine.md : 1GZ9nT85wEDa8ZARwq2rgkvtUXEmsGbNM
+     * cloud-data.md         : 1GPz785zjnLo71U1M5AZ1QWvx1PMVQIb6
+     * qa-verifier.md        : 189RMvfQj8dq7SF-pSVhK3pPahLn3oO1Y
+     * kb-curator.md         : 1LNxN1VMFB1u6gIAtGiDa6edUHmQWyCuY
+
+2. TOKEN-OPTIMIZED CONTEXT LOADING FOR NEW AGENT SESSIONS
 --------------------------------------------------------------------------------
-- Development Phase: These 3 files serve as structured development context for
-  Gemini / IDE coding agents.
+- Step 1 (Default Session Kickoff): Load `state_summary.txt` + `rules.md` +
+  `AGENTS.md` to restore project state, cached Drive IDs, and locked conventions
+  with minimal token overhead.
+- Step 2 (Work-Package Execution Lookup): Read the assigned Work Package section
+  in `proposal/Structural_Calculation_App_Consolidated_Architecture_Proposal.md`
+  (Sections 4–12) and the corresponding section of `proposed.md`:
+  * Sections 3, 5 & 7 : Clean Architecture, ReferenceDataPort, WorkspaceController
+  * Section 6         : ModuleRegistry (`ModuleSpec`, `FieldSpec`) & `CalcStep`
+  * Section 8         : Frozen 4-Panel PySide6 GUI & `DiagramSpec`
+  * Section 9         : SQLite Schema v2 (`PRAGMA user_version = 2`) & Revisions
+  * Section 10        : CloudSyncService (Google Drive API, OAuth 2.0, Cache)
+  * Section 11        : Export Engine (`exporters/`: Ordered XLSX & ReportLab PDF)
+  * Sections 12 & 16  : 8-Category QA & V1.0 Completion Roadmap
+
+3. DEVELOPMENT CONTEXT VS. V1 RUNTIME & PACKAGING
+--------------------------------------------------------------------------------
+- Development Phase: These governance files guide Primary and Subagent coding
+  workflows.
 - Production V1 Runtime: The desktop application executes 100% deterministic
-  Python calculations with zero AI/LLM API calls and does NOT load
-  `proposed.md` as a runtime prompt (per SAD Section 1.3 and ADR-09).
+  Python calculations offline/cloud-connected across 19 canonical verified modules
+  (22 catalog templates: ASCE 7-22 C&C, NDS 2024 / SDPWS 2021 Wood, AISC 360-22
+  Steel, ACI 318-19 Concrete, TMS 402-22 Masonry) with zero AI/LLM API calls.
+- Windows Execution & Packaging:
+  * Offscreen pytest (PowerShell): $env:QT_QPA_PLATFORM="offscreen"; pytest -v
+  * Desktop launcher: launch_app.bat (auto-detects local venv / PATH Python)
+  * Standalone Windows bundle spec: structural_app.spec (PyInstaller)
 ================================================================================

@@ -1,79 +1,44 @@
 """CalculationService: Central Application Service for Executing Engineering Modules.
 
-Conforms to SAD v1.0 Section 7.2 & Master Rule 8.
-Connects the PySide6 GUI to deterministic Python calculation modules in core/
-and KnowledgeBaseService without embedding engineering equations inside the GUI.
-Supports all V1 C&C (Day 13) and Wood Connections & Lateral (Day 14) workflows.
+Conforms to SAD v1.1 Section 6.1 & Master Rule 8.
+Dispatches deterministic calculation requests through the canonical ModuleRegistry
+without embedding engineering equations inside the GUI.
 """
 
 from typing import Any, Callable, Dict, List, Optional, Union
 
+from app.models import CalculationResult, DesignMethod
+from app.registry import ModuleMaturity, ModuleRegistry, get_module_registry
 from app.services.knowledge_base_service import KnowledgeBaseService
 from app.services.project_service import ProjectService
-from core.asce7.wind.awning import calculate_awning_canopy_loads
-from core.asce7.wind.guardrail import calculate_guardrail_loads
-from core.asce7.wind.parapet import calculate_parapet_wind
-from core.asce7.wind.roof_overhang import calculate_roof_overhang_wind
-from core.asce7.wind.trellis import calculate_trellis_loads
-from core.common.calculation_result import CalculationResult, DesignMethod
 from core.common.exceptions import StructuralEngineeringError
 from core.common.validation import validate_design_method
-from core.nds.connections.simpson_connectors import calculate_simpson_hanger_tie
-from core.nds.fasteners.bolts import calculate_wood_bolt_connection
-from core.nds.fasteners.nails_screws import calculate_wood_fastener_connection
-from core.nds.lateral.diaphragms import calculate_wood_diaphragm
-from core.nds.lateral.shear_walls import calculate_wood_shear_wall
 
 
 class CalculationService:
-    """Dispatches calculation requests to verified deterministic core modules."""
+    """Dispatches calculation requests to verified deterministic core modules via ModuleRegistry."""
 
     def __init__(
         self,
         kb_service: Optional[KnowledgeBaseService] = None,
         project_service: Optional[ProjectService] = None,
+        registry: Optional[ModuleRegistry] = None,
     ) -> None:
         self.kb_service = kb_service or KnowledgeBaseService()
         self.project_service = project_service
+        self.registry = registry or get_module_registry()
 
-        self._registry: Dict[str, Callable[..., CalculationResult]] = {
-            # Day 13: Components & Cladding (ASCE 7-22 / 2024 IBC)
-            "asce7_parapet_wind": calculate_parapet_wind,
-            "cc_parapet": calculate_parapet_wind,
-            "asce7_roof_overhang": calculate_roof_overhang_wind,
-            "cc_overhang": calculate_roof_overhang_wind,
-            "asce7_awning_canopy": calculate_awning_canopy_loads,
-            "cc_awning": calculate_awning_canopy_loads,
-            "asce7_trellis_loads": calculate_trellis_loads,
-            "cc_trellis": calculate_trellis_loads,
-            "ibc_guardrail_loads": calculate_guardrail_loads,
-            "cc_guardrail": calculate_guardrail_loads,
-            # Day 14: Wood Connections & Lateral (NDS 2024 / SDPWS 2021 / Simpson C-C-2026)
-            "wood_bolt_lateral": calculate_wood_bolt_connection,
-        "wood_bolt_nds": calculate_wood_bolt_connection,
-            "wood_fastener_nds": calculate_wood_fastener_connection,
-            "wood_nail_lateral": calculate_wood_fastener_connection,
-            "wood_screw_withdrawal": calculate_wood_fastener_connection,
-            "wood_combined_lateral_withdrawal": calculate_wood_fastener_connection,
-            "wood_shear_wall_sdpws": calculate_wood_shear_wall,
-            "wood_diaphragm_sdpws": calculate_wood_diaphragm,
-            "wood_simpson_hanger_tie": calculate_simpson_hanger_tie,
-        }
+        # Backward-compatible mapping of all verified module IDs and aliases -> callable
+        self._registry: Dict[str, Callable[..., CalculationResult]] = {}
+        for spec in self.registry.list_modules(maturity=ModuleMaturity.VERIFIED):
+            if spec.calculation_callable is not None:
+                self._registry[spec.module_id] = spec.calculation_callable
+                for alias in spec.aliases:
+                    self._registry[alias] = spec.calculation_callable
 
     def list_supported_modules(self) -> List[str]:
-        """Return list of registered canonical module identifiers."""
-        return [
-            "asce7_parapet_wind",
-            "asce7_roof_overhang",
-            "asce7_awning_canopy",
-            "asce7_trellis_loads",
-            "ibc_guardrail_loads",
-            "wood_bolt_lateral",
-            "wood_fastener_nds",
-            "wood_shear_wall_sdpws",
-            "wood_diaphragm_sdpws",
-            "wood_simpson_hanger_tie",
-        ]
+        """Return list of canonical verified module identifiers from ModuleRegistry."""
+        return self.registry.list_canonical_verified_ids()
 
     def run_calculation(
         self,
@@ -89,16 +54,24 @@ class CalculationService:
         a new immutable revision in SQLite via ProjectService.
         """
         mod_key = module_id.strip()
-        if mod_key not in self._registry:
+        try:
+            spec = self.registry.resolve(mod_key)
+        except KeyError:
             raise StructuralEngineeringError(
                 f"Calculation module '{mod_key}' is not registered. Supported: {self.list_supported_modules()}"
             )
 
-        method = validate_design_method(design_method)
-        calc_fn = self._registry[mod_key]
+        if spec.maturity != ModuleMaturity.VERIFIED or spec.calculation_callable is None:
+            raise StructuralEngineeringError(
+                f"Calculation module '{mod_key}' is {spec.maturity.value} and not yet available for execution."
+            )
 
-        result = calc_fn(
-            inputs=inputs,
+        method = validate_design_method(design_method)
+        effective_inputs = dict(spec.preset_inputs)
+        effective_inputs.update(inputs)
+
+        result = spec.calculation_callable(
+            inputs=effective_inputs,
             kb=self.kb_service,
             design_method=method,
             calculation_id=calculation_id,

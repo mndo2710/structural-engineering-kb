@@ -1,7 +1,7 @@
 """PySide6 Components & Cladding (C&C) Interactive 4-Panel Workspace (Day 13 Vertical Slice).
 
-Conforms to SAD v1.0 Sections 8.2.A, 8.3, 8.4 & Master Rules 2, 5, 6, 8.
-Supports all 5 V1 C&C workflows:
+Conforms to SAD v1.1 Sections 6.1, 8.1 & Master Rules 2, 5, 6, 8.
+Supports all 5 V1 C&C workflows via ModuleRegistry:
   1. Parapet Wind Pressure (ASCE 7-22 Sec. 27.3.4 & 30.9)
   2. Roof Overhang Wind Uplift (ASCE 7-22 Sec. 30.7)
   3. Attached Awning & Canopy Wind/Seismic (ASCE 7-22 Sec. 30.11 & Ch. 13)
@@ -23,12 +23,24 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.models import CalculationResult, CalculationStatus, DesignMethod, DiagramSpec
+from app.registry import ModuleRegistry, get_module_registry
 from app.services.calculation_service import CalculationService
 from app.services.knowledge_base_service import KnowledgeBaseService
 from app.services.project_service import ProjectService
 from app.services.report_service import ReportService
-from core.common.calculation_result import CalculationResult, DesignMethod
 from gui.widgets.base_workspace import BaseCalculationWorkspace
+
+
+def _build_cc_module_configs(registry: ModuleRegistry) -> Dict[str, Dict[str, Any]]:
+    configs: Dict[str, Dict[str, Any]] = {}
+    for spec in registry.list_modules(category="Loads (ASCE 7)"):
+        configs[spec.module_id] = {
+            "label": f"{spec.title} ({registry.resolve_code_display(spec.module_id)})",
+            "code": registry.resolve_code_display(spec.module_id),
+            "fields": [(f.key, f.label, f.benchmark_value) for f in spec.fields],
+        }
+    return configs
 
 
 class CCDiagramWidget(QWidget):
@@ -40,22 +52,45 @@ class CCDiagramWidget(QWidget):
         self.setStyleSheet("background-color: #ffffff;")
         self.module_id = "asce7_parapet_wind"
         self.params: Dict[str, Any] = {}
-        self.summary_note = "ASCE 7-22 Sec. 30.9 · C&C Net Pressure"
+        self.has_result: bool = False
+        self.summary_note: str = ""
 
     def update_cc_diagram(
         self,
         module_id: str,
         params: Dict[str, Any],
         summary_note: str = "",
+        has_result: bool = True,
     ) -> None:
         self.module_id = module_id
         self.params = dict(params)
-        if summary_note:
-            self.summary_note = summary_note
+        self.has_result = has_result
+        self.summary_note = summary_note
+        self.update()
+
+    def clear_diagram(self, module_id: Optional[str] = None) -> None:
+        if module_id:
+            self.module_id = module_id
+        self.params = {}
+        self.has_result = False
+        self.summary_note = ""
+        self.update()
+
+    def apply_diagram_spec(self, spec: DiagramSpec) -> None:
+        """Apply Qt-independent DiagramSpec directly to Panel 2 canvas (WP-8)."""
+        merged: Dict[str, Any] = dict(spec.geometry_params)
+        if spec.has_engine_result:
+            merged.update(spec.derived_params)
+        self.module_id = spec.module_id
+        self.params = merged
+        self.has_result = spec.has_engine_result
+        self.summary_note = spec.summary_badge if spec.has_engine_result else ""
         self.update()
 
     def update_parameters(self, **kwargs: Any) -> None:
         """Compatibility hook for BaseCalculationWorkspace."""
+        if "has_result" in kwargs:
+            self.has_result = bool(kwargs.pop("has_result"))
         self.params.update(kwargs)
         self.update()
 
@@ -75,19 +110,14 @@ class CCDiagramWidget(QWidget):
         dim_pen = QPen(QColor("#d96818"), 1.3)
 
         if "parapet" in self.module_id:
-            # Draw roof diaphragm + vertical cantilever parapet stud
             painter.setPen(struct_pen)
             painter.setBrush(QBrush(QColor("#e9ecef")))
-            # Roof deck
             painter.drawRect(int(cx), int(cy), int(w * 0.35), 14)
-            # Wall below roof
             painter.drawRect(int(cx - 14), int(cy), 14, int(h * 0.32))
-            # Parapet stud above roof
             painter.setBrush(QBrush(QColor("#fde6cf")))
             par_h_px = int(h * 0.36)
             painter.drawRect(int(cx - 14), int(cy - par_h_px), 14, par_h_px)
 
-            # Wind arrows pushing on parapet
             painter.setPen(force_pen)
             for frac in (0.2, 0.5, 0.8):
                 ay = int(cy - par_h_px * frac)
@@ -95,16 +125,16 @@ class CCDiagramWidget(QWidget):
                 painter.drawLine(int(cx - 24), ay - 4, int(cx - 18), ay)
                 painter.drawLine(int(cx - 24), ay + 4, int(cx - 18), ay)
 
-            h_par = self.params.get("h_par_ft", 3.5)
-            p_gov = self.params.get("p_gov_psf", 52.0)
+            h_par = self.params.get("h_par_ft")
+            p_gov = self.params.get("p_gov_psf") if self.has_result else None
+            p_txt = f"p_gov = {p_gov:.1f} psf" if isinstance(p_gov, (int, float)) else "p_gov = —"
+            h_txt = f"h_par = {h_par:.1f} ft" if isinstance(h_par, (int, float)) else "h_par = —"
             painter.setFont(QFont("Segoe UI", 8, QFont.Bold))
-            painter.drawText(QRectF(cx - 135, cy - par_h_px * 0.65, 110, 20), Qt.AlignLeft, f"p_gov = {p_gov:.1f} psf")
-
+            painter.drawText(QRectF(cx - 135, cy - par_h_px * 0.65, 110, 20), Qt.AlignLeft, p_txt)
             painter.setPen(dim_pen)
-            painter.drawText(QRectF(cx + 8, cy - par_h_px * 0.6, 110, 20), Qt.AlignLeft, f"h_par = {h_par:.1f} ft")
+            painter.drawText(QRectF(cx + 8, cy - par_h_px * 0.6, 110, 20), Qt.AlignLeft, h_txt)
 
         elif "overhang" in self.module_id:
-            # Draw exterior wall + sloped rafter with overhang cantilever
             painter.setPen(struct_pen)
             painter.setBrush(QBrush(QColor("#e9ecef")))
             painter.drawRect(int(cx - 8), int(cy - 10), 16, int(h * 0.36))
@@ -118,22 +148,22 @@ class CCDiagramWidget(QWidget):
             ])
             painter.drawPolygon(rafter_poly)
 
-            # Upward wind suction arrows on overhang
             painter.setPen(force_pen)
             for ax in (int(cx - 75), int(cx - 45)):
                 painter.drawLine(ax, int(cy + 40), ax, int(cy - 18))
                 painter.drawLine(ax - 4, int(cy - 12), ax, int(cy - 18))
                 painter.drawLine(ax + 4, int(cy - 12), ax, int(cy - 18))
 
-            l_oh = self.params.get("L_oh_ft", 2.5)
-            r_up = self.params.get("R_uplift_lbs", 420.0)
+            l_oh = self.params.get("L_oh_ft")
+            r_up = self.params.get("R_uplift_lbs") if self.has_result else None
+            l_txt = f"L_oh = {l_oh:.1f} ft" if isinstance(l_oh, (int, float)) else "L_oh = —"
+            r_txt = f"R_tie = {r_up:.0f} lbs uplift" if isinstance(r_up, (int, float)) else "R_tie = —"
             painter.setFont(QFont("Segoe UI", 8, QFont.Bold))
-            painter.drawText(QRectF(cx - 130, cy - 38, 120, 20), Qt.AlignLeft, f"L_oh = {l_oh:.1f} ft")
+            painter.drawText(QRectF(cx - 130, cy - 38, 120, 20), Qt.AlignLeft, l_txt)
             painter.setPen(dim_pen)
-            painter.drawText(QRectF(cx + 14, cy + 8, 150, 20), Qt.AlignLeft, f"R_tie = {r_up:.0f} lbs uplift")
+            painter.drawText(QRectF(cx + 14, cy + 8, 150, 20), Qt.AlignLeft, r_txt)
 
         elif "awning" in self.module_id:
-            # Wall + cantilevered canopy with tie-back rod
             painter.setPen(struct_pen)
             painter.setBrush(QBrush(QColor("#e9ecef")))
             painter.drawRect(int(cx - 60), int(h * 0.16), 16, int(h * 0.68))
@@ -141,18 +171,18 @@ class CCDiagramWidget(QWidget):
             painter.setBrush(QBrush(QColor("#ced4da")))
             painter.drawRect(int(cx - 44), int(cy), 120, 12)
 
-            # Diagonal tie-back rod
             painter.setPen(QPen(QColor("#c86816"), 2.0))
             painter.drawLine(int(cx - 44), int(cy - 45), int(cx + 55), int(cy))
 
-            bc = self.params.get("Bc_ft", 5.0)
-            m_w = self.params.get("M_wall_lb_ft", 1185.0)
+            bc = self.params.get("Bc_ft")
+            m_w = self.params.get("M_wall_lb_ft") if self.has_result else None
+            bc_txt = f"B_c = {bc:.1f} ft" if isinstance(bc, (int, float)) else "B_c = —"
+            m_txt = f"M = {m_w:.0f} lb-ft" if isinstance(m_w, (int, float)) else "M = —"
             painter.setPen(force_pen)
             painter.setFont(QFont("Segoe UI", 8, QFont.Bold))
-            painter.drawText(QRectF(cx - 30, cy + 18, 150, 20), Qt.AlignLeft, f"B_c = {bc:.1f} ft | M = {m_w:.0f} lb-ft")
+            painter.drawText(QRectF(cx - 30, cy + 18, 170, 20), Qt.AlignLeft, f"{bc_txt} | {m_txt}")
 
         elif "trellis" in self.module_id:
-            # Open pergola portal frame with top slats
             painter.setPen(struct_pen)
             painter.setBrush(QBrush(QColor("#fde6cf")))
             left_x = int(cx - 70)
@@ -163,44 +193,43 @@ class CCDiagramWidget(QWidget):
             painter.drawRect(right_x, top_y, 12, bot_y - top_y)
             painter.drawRect(left_x - 10, top_y - 10, right_x - left_x + 32, 10)
 
-            # Wind arrow on open trellis
             painter.setPen(force_pen)
             painter.drawLine(left_x - 55, top_y - 5, left_x - 14, top_y - 5)
             painter.drawLine(left_x - 20, top_y - 9, left_x - 14, top_y - 5)
             painter.drawLine(left_x - 20, top_y - 1, left_x - 14, top_y - 5)
 
-            v_post = self.params.get("V_post_lbs", 157.2)
+            v_post = self.params.get("V_post_lbs") if self.has_result else None
+            v_txt = f"V_post = {v_post:.1f} lbs" if isinstance(v_post, (int, float)) else "V_post = —"
             painter.setFont(QFont("Segoe UI", 8, QFont.Bold))
-            painter.drawText(QRectF(left_x - 85, top_y + 12, 110, 20), Qt.AlignLeft, f"V_post = {v_post:.1f} lbs")
+            painter.drawText(QRectF(left_x - 85, top_y + 12, 120, 20), Qt.AlignLeft, v_txt)
 
         else:
-            # Guardrail post on deck with 200 lb concentrated top-rail load
             painter.setPen(struct_pen)
             painter.setBrush(QBrush(QColor("#e9ecef")))
             painter.drawRect(int(cx - 70), int(cy + 20), 140, 16)
-            # Base plate & post
             painter.setBrush(QBrush(QColor("#adb5bd")))
             painter.drawRect(int(cx - 18), int(cy + 14), 36, 6)
             painter.drawRect(int(cx - 6), int(cy - 55), 12, 69)
 
-            # 200 lb horizontal arrow at top of guard post
             painter.setPen(force_pen)
             painter.drawLine(int(cx - 65), int(cy - 50), int(cx - 10), int(cy - 50))
             painter.drawLine(int(cx - 16), int(cy - 54), int(cx - 10), int(cy - 50))
             painter.drawLine(int(cx - 16), int(cy - 46), int(cx - 10), int(cy - 50))
             painter.setFont(QFont("Segoe UI", 8, QFont.Bold))
-            painter.drawText(QRectF(cx - 95, cy - 70, 110, 18), Qt.AlignLeft, "P = 200 lbs (IBC 1607.9)")
+            p_txt = "P = 200 lbs (IBC 1607.9)" if self.has_result else "P = — (IBC 1607.9)"
+            painter.drawText(QRectF(cx - 95, cy - 70, 140, 18), Qt.AlignLeft, p_txt)
 
-        # Top-right summary pill badge
-        note_w = 275.0
-        note_h = 24.0
-        note_rect = QRectF(w - note_w - 12, 10, note_w, note_h)
-        painter.setPen(QPen(QColor("#b8daff"), 1))
-        painter.setBrush(QBrush(QColor("#e7f1ff")))
-        painter.drawRoundedRect(note_rect, 4, 4)
-        painter.setPen(QPen(QColor("#004085"), 1))
-        painter.setFont(QFont("Segoe UI", 8, QFont.Bold))
-        painter.drawText(note_rect, Qt.AlignCenter, self.summary_note)
+        # Top-right summary pill badge (only when calculated)
+        if self.has_result and self.summary_note:
+            note_w = 275.0
+            note_h = 24.0
+            note_rect = QRectF(w - note_w - 12, 10, note_w, note_h)
+            painter.setPen(QPen(QColor("#b8daff"), 1))
+            painter.setBrush(QBrush(QColor("#e7f1ff")))
+            painter.drawRoundedRect(note_rect, 4, 4)
+            painter.setPen(QPen(QColor("#004085"), 1))
+            painter.setFont(QFont("Segoe UI", 8, QFont.Bold))
+            painter.drawText(note_rect, Qt.AlignCenter, self.summary_note)
 
 
 class CCCalculationWorkspace(BaseCalculationWorkspace):
@@ -212,143 +241,65 @@ class CCCalculationWorkspace(BaseCalculationWorkspace):
     exportExcelRequested = Signal(str)
     exportPdfRequested = Signal(str)
 
-    MODULE_CONFIGS: Dict[str, Dict[str, Any]] = {
-        "asce7_parapet_wind": {
-            "label": "Parapet Wind Pressure (ASCE 7-22 Sec. 30.9)",
-            "code": "ASCE 7-22",
-            "fields": [
-                ("V_mph", "Basic Wind Speed V (mph)", "115.0"),
-                ("exposure", "Exposure Category (B/C/D)", "C"),
-                ("h_roof_ft", "Mean Roof Height h (ft)", "25.0"),
-                ("h_par_ft", "Parapet Height h_par (ft)", "3.5"),
-                ("spacing_ft", "Stud Spacing s (ft)", "1.333"),
-                ("roof_slope_deg", "Roof Slope θ (deg)", "5.0"),
-                ("wall_zone", "Wall Zone (Zone 4 / Zone 5)", "Zone 5"),
-                ("roof_zone", "Roof Zone (Zone 2 / Zone 3)", "Zone 3"),
-                ("backspan_ft", "Stud Backspan L_back (ft)", "10.0"),
-                ("M_cap_asd_lb_ft", "Stud Bending Cap M_cap (lb-ft)", "650.0"),
-                ("V_cap_asd_lbs", "Base Shear Cap V_cap (lbs)", "450.0"),
-                ("R_cap_asd_lbs", "Roof Diaphragm Cap R_cap (lbs)", "600.0"),
-            ],
-        },
-        "asce7_roof_overhang": {
-            "label": "Roof Overhang Wind Uplift (ASCE 7-22 Sec. 30.7)",
-            "code": "ASCE 7-22",
-            "fields": [
-                ("V_mph", "Basic Wind Speed V (mph)", "115.0"),
-                ("exposure", "Exposure Category (B/C/D)", "C"),
-                ("h_roof_ft", "Mean Roof Height h (ft)", "20.0"),
-                ("L_oh_ft", "Overhang Projection L_oh (ft)", "2.5"),
-                ("L_back_ft", "Rafter Backspan L_back (ft)", "14.0"),
-                ("spacing_ft", "Rafter Spacing s (ft)", "2.0"),
-                ("roof_slope_deg", "Roof Slope θ (deg)", "15.0"),
-                ("roof_zone", "Roof Zone (Zone 2 / Zone 3)", "Zone 2"),
-                ("dead_load_psf", "Roof Dead Load D (psf)", "12.0"),
-                ("R_tie_cap_asd_lbs", "Hurricane Tie Cap R_cap (lbs)", "685.0"),
-                ("M_cap_asd_lb_ft", "Rafter Bending Cap M_cap (lb-ft)", "950.0"),
-            ],
-        },
-        "asce7_awning_canopy": {
-            "label": "Attached Awning & Canopy (ASCE 7-22 Sec. 30.11)",
-            "code": "ASCE 7-22",
-            "fields": [
-                ("V_mph", "Basic Wind Speed V (mph)", "115.0"),
-                ("exposure", "Exposure Category (B/C/D)", "C"),
-                ("h_roof_ft", "Main Roof Height h (ft)", "20.0"),
-                ("he_ft", "Eave Height h_e (ft)", "20.0"),
-                ("hc_ft", "Canopy Height h_c (ft)", "10.0"),
-                ("Bc_ft", "Canopy Projection B_c (ft)", "5.0"),
-                ("Sb_ft", "Bracket Spacing S_b (ft)", "6.0"),
-                ("w_D_psf", "Canopy Dead Load w_D (psf)", "12.0"),
-                ("w_Lr_psf", "Canopy Live Load w_Lr (psf)", "20.0"),
-                ("SDS_g", "Seismic Parameter S_DS (g)", "1.0"),
-                ("support_type", "Support (Cantilever_Bracket / TieBack_Hanger)", "Cantilever_Bracket"),
-                ("M_wall_cap_asd_lb_ft", "Wall Moment Cap M_cap (lb-ft)", "1600.0"),
-            ],
-        },
-        "asce7_trellis_loads": {
-            "label": "Open-Frame Trellis Wind/Seismic (ASCE 7-22 Sec. 29.4)",
-            "code": "ASCE 7-22",
-            "fields": [
-                ("V_mph", "Basic Wind Speed V (mph)", "115.0"),
-                ("exposure", "Exposure Category (B/C/D)", "C"),
-                ("z_top_ft", "Trellis Top Height z (ft)", "10.0"),
-                ("Hp_ft", "Post Clear Height H_p (ft)", "10.0"),
-                ("Lt_ft", "Plan Length L_t (ft)", "16.0"),
-                ("Bt_ft", "Plan Width B_t (ft)", "12.0"),
-                ("Af_eff_ft2", "Projected Solid Area A_f,eff (ft^2)", "28.0"),
-                ("epsilon_elev", "Solidity Ratio ε (As/Ag)", "0.18"),
-                ("num_posts", "Number of Posts N_p", "4"),
-                ("w_D_psf", "Trellis Dead Load w_D (psf)", "8.0"),
-                ("SDS_g", "Seismic Parameter S_DS (g)", "1.0"),
-                ("M_post_cap_asd_lb_ft", "Post Base Moment Cap (lb-ft)", "2000.0"),
-            ],
-        },
-        "ibc_guardrail_loads": {
-            "label": "Guardrail & Handrail Loads (2024 IBC Sec. 1607.9)",
-            "code": "2024 IBC / ASCE 7-22",
-            "fields": [
-                ("occupancy", "Occupancy (R-3_Residential / Commercial_Standard)", "R-3_Residential"),
-                ("H_guard_in", "Guard Height H_guard (in.)", "42.0"),
-                ("S_post_ft", "Post Spacing S_post (ft)", "5.0"),
-                ("e_fas_in", "Fascia Offset e_fas (in.)", "0.0"),
-                ("p_W_psf", "Exterior Wind Pressure p_W (psf)", "20.0"),
-                ("epsilon_guard", "Guard Solidity Ratio ε", "0.30"),
-                ("N_t_bolts", "Tension Row Bolts N_t", "2"),
-                ("d_bolt_in", "Bolt Lever Arm d_bolt (in.)", "4.25"),
-                ("T_bolt_cap_asd_lbs", "Bolt Tension Cap T_cap (lbs)", "1250.0"),
-                ("M_post_cap_asd_lb_ft", "Post Flexural Cap M_cap (lb-ft)", "950.0"),
-            ],
-        },
-    }
+    MODULE_CONFIGS: Dict[str, Dict[str, Any]] = _build_cc_module_configs(get_module_registry())
 
     def __init__(
         self,
         calc_service: Optional[CalculationService] = None,
         project_service: Optional[ProjectService] = None,
         report_service: Optional[ReportService] = None,
+        start_blank: bool = False,
         parent: Optional[QWidget] = None,
     ) -> None:
+        self.registry = calc_service.registry if calc_service else get_module_registry()
+        self.MODULE_CONFIGS = _build_cc_module_configs(self.registry)
         self.kb_service = calc_service.kb_service if calc_service else KnowledgeBaseService()
         self.project_service = project_service or ProjectService()
         self.calc_service = calc_service or CalculationService(
             kb_service=self.kb_service,
             project_service=self.project_service,
+            registry=self.registry,
         )
         self.report_service = report_service or ReportService(
             kb_service=self.kb_service,
             project_service=self.project_service,
         )
         self._active_module_id = "asce7_parapet_wind"
-        self._input_edits: Dict[str, QLineEdit] = {}
+        self._cc_start_blank = start_blank
 
         super().__init__(
             module_title="Components & Cladding Loads",
-            default_code="ASCE 7-22",
+            default_code=self.registry.resolve_code_display(self._active_module_id),
+            start_blank=True,
             parent=parent,
         )
 
-        # Replace generic wood bolt diagram with C&C schematic diagram widget
+        # Replace base diagram widget cleanly to prevent double-diagram ghosting (UI-01)
         parent_card_layout = self.diagram_widget.parentWidget().layout()
         old_diag = self.diagram_widget
         self.diagram_widget = CCDiagramWidget(self)
         parent_card_layout.replaceWidget(old_diag, self.diagram_widget)
+        old_diag.hide()
+        old_diag.setParent(None)
         old_diag.deleteLater()
 
         # Connect calculate signal to deterministic execution
         self.calculateRequested.connect(self._execute_active_calculation)
 
-        # Run initial default calculation so all 4 panels show live verified C&C results
-        self.run_active_module()
+        self.reset_inputs(blank=self._cc_start_blank)
+        if not self._cc_start_blank:
+            self.run_active_module()
 
-    def _populate_sample_inputs(self) -> None:
-        """Build interactive module selector and editable parameter fields."""
-        # Clear existing rows
+    def _build_input_form(self, blank: bool) -> None:
+        """Build sub-assembly selector and editable parameter fields."""
         while self.form_layout.rowCount() > 0:
             self.form_layout.removeRow(0)
         self._input_edits.clear()
 
-        # Sub-module selector combo box
+        spec = self.registry.resolve(self._active_module_id)
+        self._active_field_specs = spec.fields
+        self.default_code = self.registry.resolve_code_display(spec.module_id)
+
         lbl_mod = QLabel("C&C Sub-Assembly")
         lbl_mod.setStyleSheet("font-size: 11px; font-weight: bold; color: #007bff;")
         self.combo_module = QComboBox()
@@ -361,11 +312,11 @@ class CCCalculationWorkspace(BaseCalculationWorkspace):
         self.form_layout.addRow(lbl_mod)
         self.form_layout.addRow(self.combo_module)
 
-        cfg = self.MODULE_CONFIGS[self._active_module_id]
-        for key, label_str, default_val in cfg["fields"]:
-            lbl = QLabel(label_str)
+        for fld in spec.fields:
+            lbl = QLabel(fld.label)
             lbl.setStyleSheet("font-size: 11px; color: #495057;")
-            edit = QLineEdit(str(default_val))
+            init_val = "" if blank else ("" if fld.benchmark_value is None else str(fld.benchmark_value))
+            edit = QLineEdit(init_val)
             edit.setAlignment(Qt.AlignRight)
             edit.setFixedHeight(26)
             edit.setStyleSheet("""
@@ -379,10 +330,9 @@ class CCCalculationWorkspace(BaseCalculationWorkspace):
                     color: #0000ff;
                 }
             """)
-            self._input_edits[key] = edit
+            self._input_edits[fld.key] = edit
             self.form_layout.addRow(lbl, edit)
 
-        # Quick Export buttons row inside input panel
         export_row = QHBoxLayout()
         export_row.setSpacing(6)
         self.btn_export_xlsx = QPushButton("Export XLSX (17-Col)")
@@ -399,25 +349,64 @@ class CCCalculationWorkspace(BaseCalculationWorkspace):
         export_row.addWidget(self.btn_export_pdf)
         self.form_layout.addRow(export_row)
 
-    def select_submodule(self, module_id: str) -> None:
-        """Programmatically switch active C&C workflow template."""
-        if module_id in self.MODULE_CONFIGS:
-            self._active_module_id = module_id
-            self._populate_sample_inputs()
-            self.run_active_module()
+    def _populate_blank_inputs(self) -> None:
+        # Built after _active_module_id is set via reset_inputs()
+        pass
+
+    def _populate_sample_inputs(self) -> None:
+        self._build_input_form(blank=False)
+
+    def reset_inputs(self, blank: bool = True) -> None:
+        """Reset panel inputs to blank (live-safe) or benchmark defaults."""
+        if blank:
+            self.clear_inputs_to_blank()
+        else:
+            self.load_benchmark_defaults()
+
+    def clear_inputs_to_blank(self) -> None:
+        """Clear all input controls to blank and reset output panels to INCOMPLETE."""
+        self._build_input_form(blank=True)
+        self.clear_to_incomplete()
+
+    def load_benchmark_defaults(self) -> None:
+        """Populate controlled benchmark defaults for explicit demos and regression tests."""
+        self._build_input_form(blank=False)
+
+    def clear_to_incomplete(self, reason: str = "Enter required inputs and click Run Calculation.") -> None:
+        super().clear_to_incomplete(reason)
+        if isinstance(self.diagram_widget, CCDiagramWidget):
+            self.diagram_widget.clear_diagram(self._active_module_id)
+
+    def show_invalid_input(self, message: str) -> None:
+        super().show_invalid_input(message)
+        if isinstance(self.diagram_widget, CCDiagramWidget):
+            self.diagram_widget.clear_diagram(self._active_module_id)
+
+    def select_submodule(self, module_id: str, start_blank: bool = False) -> None:
+        """Programmatically switch active C&C workflow template (resolving aliases)."""
+        spec = self.registry.get(module_id)
+        canonical_id = spec.module_id if spec is not None else module_id
+        if canonical_id in self.MODULE_CONFIGS:
+            self._active_module_id = canonical_id
+            self.reset_inputs(blank=start_blank)
+            if not start_blank:
+                self.run_active_module()
 
     def _on_submodule_changed(self, index: int) -> None:
         mod_id = self.combo_module.itemData(index)
         if mod_id and mod_id != self._active_module_id:
             self._active_module_id = mod_id
-            self._populate_sample_inputs()
-            self.run_active_module()
+            self.reset_inputs(blank=self._cc_start_blank)
+            if not self._cc_start_blank:
+                self.run_active_module()
 
     def get_form_inputs(self) -> Dict[str, Any]:
         """Parse typed inputs from QLineEdit controls."""
         parsed: Dict[str, Any] = {}
         for k, edit in self._input_edits.items():
             raw = edit.text().strip()
+            if raw == "":
+                continue
             try:
                 parsed[k] = float(raw)
             except ValueError:
@@ -426,11 +415,20 @@ class CCCalculationWorkspace(BaseCalculationWorkspace):
 
     def set_design_method(self, method: DesignMethod) -> None:
         super().set_design_method(method)
-        self.run_active_module()
+        _, err_status, _ = self.validate_and_get_inputs()
+        if err_status is None:
+            self.run_active_module()
 
-    def run_active_module(self) -> CalculationResult:
+    def run_active_module(self) -> Optional[CalculationResult]:
         """Execute active C&C module and update all 4 workspace panels."""
-        inputs = self.get_form_inputs()
+        inputs, err_status, err_msg = self.validate_and_get_inputs()
+        if err_status == CalculationStatus.INCOMPLETE:
+            self.clear_to_incomplete(err_msg)
+            return None
+        if err_status == CalculationStatus.INVALID_INPUT:
+            self.show_invalid_input(err_msg)
+            return None
+
         method = self.get_selected_design_method()
         result = self.calc_service.run_calculation(
             module_id=self._active_module_id,
@@ -465,6 +463,7 @@ class CCCalculationWorkspace(BaseCalculationWorkspace):
                 module_id=result.module_id,
                 params=diag_params,
                 summary_note=note,
+                has_result=True,
             )
 
     def export_current_to_excel(self, output_path: Path) -> Path:
@@ -480,6 +479,8 @@ class CCCalculationWorkspace(BaseCalculationWorkspace):
     def _on_export_xlsx_clicked(self) -> None:
         if self._current_result is None:
             self.run_active_module()
+        if self._current_result is None:
+            return
         out_path = Path("storage/projects") / f"{self._current_result.module_id}_{self._current_result.design_method.value}.xlsx"
         saved = self.export_current_to_excel(out_path)
         self.exportExcelRequested.emit(str(saved))
@@ -487,6 +488,8 @@ class CCCalculationWorkspace(BaseCalculationWorkspace):
     def _on_export_pdf_clicked(self) -> None:
         if self._current_result is None:
             self.run_active_module()
+        if self._current_result is None:
+            return
         out_path = Path("storage/projects") / f"{self._current_result.module_id}_{self._current_result.design_method.value}.pdf"
         saved = self.export_current_to_pdf(out_path)
         self.exportPdfRequested.emit(str(saved))

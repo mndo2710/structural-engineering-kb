@@ -1,94 +1,123 @@
 ================================================================================
 PROJECT STATE SUMMARY: structural-engineering-kb (US Structural Calculation App)
-Last Updated: 2026-11-17 (Updated HSS & Shear Tab Procedures + Rule 5 Load-Path Order in rules.md)
+Last Updated: 2026-11-18 (V1.0 Release Complete — Phases 0–10 / 240/240 pytest tests passing / PyInstaller .exe verified)
 Auto-Update Rule: Update this file every 3 turns to compress context & save tokens.
 ================================================================================
 
-1. ARCHITECTURAL BASELINE (`proposed.md` — SAD v1.0 & Approved Fast-Track Plan)
+1. ARCHITECTURAL BASELINE (`proposed.md` v1.1 & Consolidated Proposal `1KlEES_QYXMFnwYAKwqdathM7LalXiBq8`)
 - Product: Standalone Windows Desktop Structural Engineering Calculation Application.
-- Operation Mode: Cloud-connected (Google Drive raw sync + local cache), 100% offline-capable.
+- Operation Mode: Cloud-connected (Google Drive raw KB sync + local cache), 100% offline-capable.
 - AI Integration in V1 Runtime: None (100% deterministic Python calculation engine; Gemini/Antigravity used externally as dev tools only).
-- V1 Initial Scope (SAD Sec. 1 & 8.2):
-  A. Components & Cladding (Parapet, Overhang, Awning/Canopy, Trellis, Guardrail/Handrail, Load Combos & Sub-Assemblies)
-  B. Wood Connections & Lateral (Nails, Screws, Lag Screws, Bolts, Simpson SDS/Hangers/Ties/Holdowns/Post Bases, Shear Walls/Diaphragms)
-  C. Steel Connections (Bolts, Welds, Shear Tab, Single/Double Angle, Base Plates, HSS Connections)
-  D. Concrete & Masonry Anchorage (Cast-in/Post-Installed Concrete Anchors, CMU Out-of-Plane Breakout, Embedded Steel Posts)
-- Tech Stack (SAD Sec. 4.1 & ADR-01..10):
-  * Language & Engine: Python 3.x + NumPy/Pandas (Deterministic ASD & LRFD, never mixed).
-  * Desktop GUI: PySide6 (4-Panel Calculation Workspace: Input, Diagram, Calculation Sheet, Summary; Statuses: PASS, FAIL, REQUIRES REVIEW, INCOMPLETE, INVALID INPUT).
-  * Storage: CSV/Markdown (`database/`, `procedures/`) + `config/reference_manifest.json` (92 SHA-256 verified) + SQLite (`storage/projects/structural_app.sqlite3` with revision tracking).
-  * Exporters: `openpyxl`/`XlsxWriter` (17-col A–Q, Arial 10pt, `vertAlign="baseline"`, `Source_Audit` tab, `Equation -> Substitution -> Result -> Limit -> DCR`) & `ReportLab` (12-section PDF Report built around the 7-section Plan Check layout).
+- Frozen 4-Panel PySide6 UI (Non-Negotiable):
+  * Header Bar: Hamburger button, dynamic calculation title, segmented `ASD | LRFD` toggle.
+  * Collapsible Sidebar: 232 px expanded (user-defined groups, drag-to-reorder, `+ Add Calculation`) <-> 48 px rail (numbered status chips, hover flyout), ~120 ms animation.
+  * 3-Column Add Calculation Dialog: Category | Template (with `COMING_SOON` gating) | Preview (`Name`, `Group`, `Design method`, `Start from: Blank | Duplicate`).
+  * 4-Panel Workspace:
+    - Panel 1 (Left, 280–380 px): Schema-driven `InputForm` (`FieldSpec` symbols, units, KB dropdowns, validation) + `Run Calculation` & `Save Revision`.
+    - Panel 2 (Top-Right): Dynamic schematic canvas driven by Qt-independent `DiagramSpec` (immediate geometry redraw on input edit; engine-derived forces; amber warning pills).
+    - Panel 3 (Middle-Right): Code-basis banner + ordered `CalcStep` rows (`Equation -> Substitution -> Result`) with right-aligned governing code references integrated inline (vendored offline KaTeX in `QWebEngineView` + rich-text fallback; no 5th panel).
+    - Panel 4 (Bottom-Right): `SummaryViewModel` with 5 locked statuses (`PASS`, `FAIL`, `REQUIRES REVIEW`, `INCOMPLETE`, `INVALID INPUT`) + separate `is_stale` flag, governing check, DCR gauge, and 7-column summary table.
+- Clean Architecture & Data Contracts:
+  * Dependency Direction: `gui/` -> `app/` (`controllers/`, `services/`, `models/`, `registry/`, `rendering/`) -> `core/` (`common/`, `ports/ReferenceDataPort`, `asce7/`, `nds/`, `aisc360/`, `aci318/`, `tms402/`) <- `storage/`, `exporters/`, `cloud/`.
+  * Blank Input Policy: New blank items start with empty required fields, status `INCOMPLETE`, and zero sample/mockup numbers.
+  * Run vs. Save Revision: `Run` computes in-memory result only; `Save Revision` writes an immutable SQLite revision with reference SHA-256 snapshot.
+  * SQLite Schema v2 (`PRAGMA user_version = 2`): Adds `calculation_groups`, `project_settings`, and item ordering/draft/stale/soft-delete columns with pre-migration backup in `storage/backups/`.
 
-2. CURRENT PROGRESS STATUS
+2. COMPLETED MILESTONES (100% V1.0 COMPLETE — 240/240 TESTS PASSING)
 - [COMPLETED 100%] SAD Phase 1 (Days 1–10 Engineering Knowledge Base):
-  * 66 verified CSV lookup tables (`database/`) and 26 verified 7-section Markdown calculation procedures (`procedures/`) covering 100% of V1 Initial Scope.
-- [COMPLETED 100%] Repository Architecture Synchronization & Cleanup (2026-11-14):
-  * Synchronized all directory structures per SAD Sec. 15 and archived pre-Day-1 drafts into `backup/`.
-- [COMPLETED 100%] Day 11 (Phase 2 – Architecture Foundation Part 1):
-  * Implemented `core/common/`: `calculation_result.py`, `units.py`, `load_combinations.py` (ASCE 7-22 ASD/LRFD, separated), `validation.py`, `exceptions.py`.
-  * Implemented `app/services/knowledge_base_service.py` with in-memory caching, `utf-8-sig` parsing, and SHA-256 audit.
-  * Computed and synced SHA-256 hashes for all 92 reference files (66 CSVs + 26 MDs) into `config/reference_manifest.json` (Verified: 92, Missing: 0, Mismatch: 0).
-- [COMPLETED 100%] Day 12 (Phase 2 – Architecture Foundation Part 2):
-  * Implemented `storage/repositories/project_repository.py` with 8 SQLite tables.
-  * Implemented `app/services/project_service.py` & `app/services/history_service.py` with revision tracking, parameter diffing, and audit logging.
-  * Implemented `gui/widgets/base_workspace.py`, `gui/main_window.py`, and `gui/dialogs/add_calculation_dialog.py`.
+  * 66 verified CSV lookup tables (`database/`) and 26 verified 7-section Markdown calculation procedures (`procedures/`).
+- [COMPLETED 100%] Days 11–12 (Phase 2 Architecture Foundation Parts 1 & 2):
+  * `core/common/`, `KnowledgeBaseService` (92/92 SHA-256 hashes verified in `config/reference_manifest.json`), SQLite `ProjectRepository`, `ProjectService`, `HistoryService`, PySide6 `MainWindow`, `BaseCalculationWorkspace`, `AddCalculationDialog`.
 - [COMPLETED 100%] Day 13 (Component Pipeline: C&C Module Vertical Slice E2E):
-  * Implemented `core/asce7/wind/` (`velocity_pressure.py`, `c_and_c_pressure.py`, `parapet.py`, `roof_overhang.py`, `awning.py`, `trellis.py`, `guardrail.py`) and `core/asce7/seismic/seismic_loads.py` supporting both ASD and LRFD.
-  * Implemented `app/services/calculation_service.py` and `app/services/report_service.py`.
-  * Implemented `exporters/excel_builder.py` (17-col A–Q, Arial 10pt, `vertAlign="baseline"`, 3 tabs `Calc_Sheet`, `Database`, `Source_Audit`), `exporters/pdf_builder.py` (12-section ReportLab PDF built around the 7-section Plan Check layout), and `exporters/audit_logger.py`.
-  * Implemented `gui/widgets/cc_workspace.py` (`CCCalculationWorkspace` & `CCDiagramWidget` for all 5 C&C sub-assemblies) and wired into `gui/main_window.py` & `gui/dialogs/add_calculation_dialog.py`.
-  * Verified 61/61 unit, benchmark, regression, and E2E tests (`tests/test_cc_vertical_slice.py`).
+  * `core/asce7/wind/` & `seismic/`, `CalculationService`, `ReportService`, `exporters/excel_builder.py`, `pdf_builder.py`, `audit_logger.py`, `gui/widgets/cc_workspace.py`.
 - [COMPLETED 100%] Day 14 (Component Pipeline: Wood Connections & Lateral Vertical Slice E2E):
-  * Implemented `core/nds/fasteners/` (`bolts.py` for NDS 2024 Ch. 11/12 EYM Modes Im–IV, Hankinson formula, algebraic Cg Eq. 11.3-1, C_Delta, and Appendix E Net Section Tension, Row Tear-Out Z_RT', Group Tear-Out Z_GT'; `nails_screws.py` for Nails, Wood Screws, Lag Screws & Simpson SDS ICC-ESR-2236 lateral, withdrawal & Z_alpha' combined interaction).
-  * Implemented `core/nds/lateral/` (`shear_walls.py` for SDPWS 2021 Sec. 4.3 unit shear, C_ar aspect ratio factor, holdown overturning tension with Simpson HDU/DTT lookup, 4-term wall deflection Eq. 4.3-1 & story drift; `diaphragms.py` for SDPWS 2021 Sec. 4.2 diaphragm unit shear, 4-term deflection Eq. 4.2-1, chord force & collector strap lookup).
-  * Implemented `core/nds/connections/simpson_connectors.py` (Simpson C-C-2026 Joist Hangers LUS/HUS/HHUS/HGUS & Hurricane Ties H1A/H2.5A/H10A simultaneous 3-axis interaction & 75% Rule).
-  * Implemented `gui/widgets/wood_workspace.py` (`WoodCalculationWorkspace` & `WoodDiagramWidget` with 5 dynamic schematic views) and wired into `app/services/calculation_service.py`, `gui/main_window.py`, and `gui/dialogs/add_calculation_dialog.py`.
-  * Verified 8/8 comprehensive Level 1–5 verification & benchmark tests (`tests/test_wood_vertical_slice.py`, total 69 passing tests across suite).
-- [COMPLETED 100%] GitHub Repository Synchronization (2026-11-16):
-  * Successfully initialized and connected local workspace to GitHub repository `mndo2710/structural-engineering-kb.git`.
-  * Packaged, committed, and pushed Day 14 milestone (commit `2b77570`): 233 files, 32,678 insertions across full Knowledge Base, Calculation Engine, Desktop App, Exporters, and Tests.
-  * Synchronized local `main` branch with `origin/main` (Up to date).
-- [COMPLETED 100%] Steel Procedures Upgrade & Rule 5 Load-Path Consistency Standard (2026-11-17):
-  * Upgraded `procedures/03_steel_design/steel_hss_to_hss_moment_shear_aisc_workflow.md` (`1wPgJu2YB-EwSJTlIU6nmBq6D1d8jzKqx`) with unified skewed/matched/stepped HSS beam-to-column checks, throat-weighted Table K5.1 weld group, and Sec. H3 torsion interaction (old version backed up in `backup/`).
-  * Upgraded `procedures/03_steel_design/steel_shear_tab_connection_aisc_workflow.md` (`1V6UTtkmWNjIpU1HIAXFXNztsIJJpXx-T`) with explicit AISC Manual Part 10 / Table K1.2 HSS column wall slenderness & punching shear equations (old version backed up in `backup/`).
-  * Updated `rules.md` (`1teDErExvnqyEUHd5YJuz2I2H5aPxJbjd`, Rule 5) to mandate the 4-stage load-path verification order (Geometry/Limits -> Primary Force Transfer -> Connecting Element/Base Metal -> Supporting Member/Global Interaction) and Dual LRFD & ASD parity across all procedures.
+  * `core/nds/fasteners/` (`bolts.py`, `nails_screws.py`), `core/nds/lateral/` (`shear_walls.py`, `diaphragms.py`), `core/nds/connections/simpson_connectors.py`, `gui/widgets/wood_workspace.py`.
+- [COMPLETED 100%] Pre-Day 15 Steel Procedure Upgrades & Rule 5 Load-Path Standard (2026-11-17):
+  * Upgraded `steel_hss_to_hss_moment_shear_aisc_workflow.md` (`1wPgJu2YB-EwSJTlIU6nmBq6D1d8jzKqx`) and `steel_shear_tab_connection_aisc_workflow.md` (`1V6UTtkmWNjIpU1HIAXFXNztsIJJpXx-T`), standardized Rule 5 4-Stage Load-Path Order, and refreshed 92/92 manifest SHA-256 hashes.
+- [COMPLETED 100%] Consolidated Architecture Proposal & Governance Synchronization (2026-11-17):
+  * Adopted `proposal/Structural_Calculation_App_Consolidated_Architecture_Proposal.md` (`1KlEES_QYXMFnwYAKwqdathM7LalXiBq8`), archived superseded drafts/governance files to `backup/`, and synchronized `proposed.md` (v1.1), `rules.md`, `AGENTS.md`, `.agents/agents/*.md`, `README.md`, `config/app_settings.json`, `context_guide.txt`, and `state_summary.txt`.
+- [COMPLETED 100%] Phase 0 (`WP-0` — Read-Only Baseline Audit & Gate 0 Cleanup, 2026-11-18):
+  * Verified `F-01..F-22` & Day 14 backlog, restored 4 Google Drive `(1)`-suffixed reference filenames (`92/92` SHA-256 verified), recorded SQLite v1 fixture, UI screenshots, and 20/20 ASD/LRFD numerical baselines.
+- [COMPLETED 100%] Phase 1 (`WP-0b` — P0 Live-Data Safety Hotfix, 2026-11-18):
+  * Removed silent sample values, sample calc sheet/table, `&ell;` entity, `c_delta=0.69` fallback, and `UI-01` diagram ghosting on blank items (`INCOMPLETE` start); resolved `gui -> core` imports via `app/models/contracts.py`.
+- [COMPLETED 100%] Phase 2 (`WP-1a` + `WP-2` + `WP-3` — Foundational Contracts, 2026-11-18):
+  * `WP-1a`: `storage/migrations/schema_v2.py` + `ProjectRepository` v2 (`PRAGMA user_version = 2`, pre-migration backups in `storage/backups/`, `calculation_groups`, `project_settings`, item ordering/draft/stale/soft-delete APIs).
+  * `WP-2`: `core/ports/reference_data_port.py`, `core/common/math_markup.py`, and `core/common/calculation_result.py` (`LoadPathStage`, `Quantity`, `AcceptanceCriterion`, `RefSpec`, `CalcStep`, `CalculationResult.trace`).
+  * `WP-3`: `app/registry/` (`ModuleRegistry`, `ModuleSpec`, `FieldSpec`, dynamic code edition lookup).
+- [COMPLETED 100%] Phase 3 (`WP-1b` + `WP-4` — Item Services & Pure-Python `WorkspaceController`, 2026-11-18):
+  * `ProjectService` item/group/default APIs, `HistoryService.reconstruct_calculation_result()`, and `app/controllers/workspace_controller.py` (`Run` vs `Save Revision`, `is_stale` canonical hashing, zero Qt imports).
+- [COMPLETED 100%] Phase 4 (`WP-5` + `WP-6`) & Phase 5 (`WP-7` + `WP-8` + `WP-9`, 2026-11-18):
+  * `WP-5/WP-6`: `MainWindow` backed by `ProjectService` + `WorkspaceHost`, drag-and-drop sidebar reorder, context menu, functional Pages 0/1/6/7.
+  * `WP-7/WP-8`: Local offline KaTeX assets (`gui/assets/katex/`), SVG icons (`gui/assets/icons/`), `app/rendering/math_renderer.py`, `app/models/diagram_spec.py`, and `app/rendering/diagram_builders.py`.
+  * `WP-9`: All 13 `core/asce7/` & `core/nds/` files decoupled via `ReferenceDataPort` and emitting 4-stage `CalcStep` traces with 100% WP-0 numerical parity.
+- [COMPLETED 100%] Phase 6 (`WP-11` / `Day 15` Steel & `Day 16` Concrete/CMU Engines, 2026-11-18):
+  * Implemented 6 AISC 360-22 Steel modules (`core/aisc360/`) and 3 ACI 318-19 / TMS 402-22 Concrete & CMU modules (`core/aci318/`, `core/tms402/`), all wired into `ModuleRegistry` (`19` canonical verified / `22` catalog templates).
+- [COMPLETED 100%] Phase 7 (`WP-10` / `Day 18` Exporters & Multi-Header CSV Parsing, 2026-11-18):
+  * Resilient `csv.reader` multi-header parsing across all 73 disk CSVs (`0` skips), `CalcStep` trace & `DiagramSpec` rendering in `excel_builder.py` / `pdf_builder.py`, and ordered multi-item `ReportService.export_project_excel` / `export_project_pdf`.
+- [COMPLETED 100%] Phase 8 (`Day 17` Google Drive Raw-File Synchronization, 2026-11-18):
+  * `cloud/credential_store.py`, `cloud/local_cache_manager.py`, `cloud/drive_sync_service.py` (`application/octet-stream`, `keyring`, SHA-256 conflict preservation, non-blocking offline mode, Decision D-7 SQLite isolation).
+- [COMPLETED 100%] Phase 9 (`Day 19`) & Phase 10 (`Day 20` — Full QA, Pinned Dependencies & PyInstaller Build, 2026-11-18):
+  * Pinned `requirements.txt`, built `StructuralCalculationApp.exe` via `structural_app.spec`, verified 0 AST boundary violations across 98 Python files, and passed **240/240 pytest tests** (0 failed, 0 skipped).
 
 3. KEY GOOGLE DRIVE FOLDER & FILE IDs (CACHE FOR ZERO-SEARCH LOOKUP)
 - Reference Library Root (`TCUS`): `1WTG1-B0xZ0GozvfigreJvtLxJI6HnIwQ` (`TCUS/NDS 2024`: `1FOWH4WhSNWjmc-gvuxh2I_uasV537qYk`)
 - App Repo Root (`structural-engineering-kb`): `1tz7tBCDjFtiVpOVvN9MGxpduLx-EA7QO`
-  * Active Root Files:
-    - `proposed.md` (SAD v1.0 — Authoritative Project Baseline; ONLY update Sec. 2.1 with state_summary.txt)
-    - `rules.md` (`1teDErExvnqyEUHd5YJuz2I2H5aPxJbjd` — Master Working Rules, updated 2026-11-17)
-    - `context_guide.txt` (`1ZCzkgeK0gINvbALFzyzxlyaJoJQhyVEs`)
-    - `main.py` (`1uAdGSTG_ibtcFniYpE4dPw4dY25jcGIR`)
+  * Active Root Governance & Entry Files:
+    - `proposed.md` (SAD v1.1): `1HSg-xqOuK0hY3flT2hAwBdveXAx-Kj3f`
+    - `rules.md`: `1lwPHMwXqP2KQoItQH8g6slJy9IKpcOxM`
+    - `AGENTS.md`: `1wlUPLviMPUXT9oUT8ngLi-bCFfYNSSYz`
+    - `README.md`: `1NqLTV34LWsf3aAjS4lktDc2fQreNXbzA`
+    - `main.py`: `1uAdGSTG_ibtcFniYpE4dPw4dY25jcGIR`
+    - `requirements.txt`: `19fFQfTL3PtAzVb9-Ei447SJjsTFMBf0-`
   * Active Folders in Root:
-    - `config/`: `1diBqCuQ_sjBEndCqNctSMxaUn3FulcO0` (`active_code_registry.json`: `1tne4rixrlwW3qQ0slWxl5TN73bae7EGD`, `reference_manifest.json`: `1sE2I3SD4Y3o9hjjqPsIygqQR9p2SZdPQ`)
+    - `proposal/`: `1VggHm-vqTQvyVcVQ0uoSc44utEy4x_7V`
+      * `Structural_Calculation_App_Consolidated_Architecture_Proposal.md`: `1KlEES_QYXMFnwYAKwqdathM7LalXiBq8` (APPROVED ROADMAP)
+    - `.agents/`: `11KD6JFkuVE0TnBYSXvw2zvhPqH224PHE` (`agents/`: `1NeqXvcDFz2f0GH19xMwUo0zP8NR-cksU`)
+      * `desktop-app.md`: `1hGahCX9T_nTZlDHRLcYjTSWfLwTJOokf`
+      * `calculation-engine.md`: `1GZ9nT85wEDa8ZARwq2rgkvtUXEmsGbNM`
+      * `cloud-data.md`: `1GPz785zjnLo71U1M5AZ1QWvx1PMVQIb6`
+      * `qa-verifier.md`: `189RMvfQj8dq7SF-pSVhK3pPahLn3oO1Y`
+      * `kb-curator.md`: `1LNxN1VMFB1u6gIAtGiDa6edUHmQWyCuY`
+    - `config/`: `1diBqCuQ_sjBEndCqNctSMxaUn3FulcO0`
+      * `app_settings.json`: `1VDOHs27rvi_r4C78f1g5pmk7KHs6CRuh`
+      * `active_code_registry.json`: `1tne4rixrlwW3qQ0slWxl5TN73bae7EGD`
+      * `reference_manifest.json`: `1sE2I3SD4Y3o9hjjqPsIygqQR9p2SZdPQ`
     - `database/`: `1JRyfJmMXhiXrjiZ4NQwhNS2Il4zEjuZC` (66 verified CSVs)
-    - `procedures/`: `1KDHbmqfs4R3rbPvDPziAClQSHwOBGa33` (26 verified MDs; `03_steel_design/`: `1DKyoPc6B1L1f-Kqh1vOHwJYxvvksAXvQ`; `steel_hss_to_hss_moment_shear_aisc_workflow.md`: `1wPgJu2YB-EwSJTlIU6nmBq6D1d8jzKqx`; `steel_shear_tab_connection_aisc_workflow.md`: `1V6UTtkmWNjIpU1HIAXFXNztsIJJpXx-T`)
-    - `core/`: `1-9nKxCr7GbyovVq5cabrVV6c6nIRy3rR`
-      * `common/`: `13tu3_Nmv8KnVyZGY7664hgvcl5xBhFyy`
-      * `asce7/`: `1dmUSm_JmXBdDFjD9MAb02PcXkDQ5S61Q` (`wind/`: `1BAPFXL_OC65FTdhNUVt1NBxo63f6Ss98`, `seismic/`: `1n38qBamCh2mVtpWXnuFvBEHbO7sbJpoR`)
-      * `nds/`: `1Y0k0otOuMWPG0oxIR3zXhf1M-HWciRpS` (`fasteners/`: `1YsznCo9D_UxVpZxkO9oHHKfksxhnC0xF`, `lateral/`: `1OxNEPCBhxKOFnwwbFhDvj4OrsyWCrpyC`, `connections/`: `1it6xncLj7wMN2XeaY1ICSFITPewT7Pmm`)
-      * `aisc360/`: `1cHbTiyRGeiAiuFX4f-te-JCzpZan8X1i`
-      * `aci318/`: `1qwmaummhPqRCGIbTcsvkFAxuSkPzNpL5`
-      * `tms402/`: `19FxIcxcjPi5UUAFcYT8gaR_A6vnc9-g8`
-    - `app/`: `1I8_FD6KRQX2xYFbvzqY1VlqsXuV1P-S8` (`services/`: `1au6s-udPc84Gmi6jRoKr-YZZrKtA-Xh5`, `calculation_service.py`: `1TbT5OjwDPdcPhaGz9bQSqXVUnuBHIi3D`)
+    - `procedures/`: `1KDHbmqfs4R3rbPvDPziAClQSHwOBGa33` (26 verified MDs; `03_steel_design/`: `1DKyoPc6B1L1f-Kqh1vOHwJYxvvksAXvQ`)
+    - `core/`: `1-9nKxCr7GbyovVq5cabrVV6c6nIRy3rR` (`common/`: `13tu3_Nmv8KnVyZGY7664hgvcl5xBhFyy`, `asce7/`: `1dmUSm_JmXBdDFjD9MAb02PcXkDQ5S61Q`, `nds/`: `1Y0k0otOuMWPG0oxIR3zXhf1M-HWciRpS`, `aisc360/`: `1cHbTiyRGeiAiuFX4f-te-JCzpZan8X1i`, `aci318/`: `1qwmaummhPqRCGIbTcsvkFAxuSkPzNpL5`, `tms402/`: `19FxIcxcjPi5UUAFcYT8gaR_A6vnc9-g8`)
+    - `app/`: `1I8_FD6KRQX2xYFbvzqY1VlqsXuV1P-S8` (`services/`: `1au6s-udPc84Gmi6jRoKr-YZZrKtA-Xh5`)
     - `gui/`: `18qkaAMzM-9Ov58HMnFPY0Htza1MRXRM6` (`main_window.py`: `120JFjLg1Wvk4_jbVAzVt9LPJQ_WYuatv`, `widgets/`: `18w-iZ3SA5boSr02mHX_XrqO3igwZMmAb`, `dialogs/`: `1L3YXbvXwRUl4AaoZTB2XNElgU3DkS7bd`)
     - `exporters/`: `1ir9fWjvnHNWgnHZ1hU1askTMMlnYKA5V` (`excel_builder.py`: `1-J4SbiDaa8ZY75eeTO7f8_k_dJmEGKKM`, `pdf_builder.py`: `1R-eGouGWZn16Z7vek16kxi3N5RGB2nAi`, `audit_logger.py`: `1jvmdgnGOESSG39JHeuZvano0pHkZH9MP`)
     - `cloud/`: `1RPGDAibh2iETiEr3nXnfv1wkbkXb5_QQ`
     - `storage/`: `1Ja4N9WxMHRJtJO79IVKF6FN1epyhwzqs` (`repositories/`: `1SbuOh7AVyUOkEM24QTUVD10nev0fhvKU`)
-    - `tests/`: `18RwvXqjvyaQj6d6qKnw-DMNcFc0nbDIb` (`test_cc_vertical_slice.py`: `15vKl5KEy0yJgiOCUW8LjSa63VegQFF3w`, `test_wood_vertical_slice.py`: `1NzZrelsOfjvkEfVdvSPPVhnbav3FqsGh`)
+    - `tests/`: `18RwvXqjvyaQj6d6qKnw-DMNcFc0nbDIb`
     - `logs/`: `19aH194XYboN5zAJ2_qqWRf2ZLkJ1gh-Z`
-    - `docs/`: `1HWga4hZmRQRw_cVNaTTGDNBMTORKh_Zz`
+    - `docs/`: `1HWga4hZmRQRw_cVNaTTGDNBMTORKh_Zz` (`review_audit_day14.md`: `1yL41wY7-WQ2Oghe3i_O7Iw9p51ukTRya`)
     - `backup/`: `168YNvao8onqXfHC-cjcSCWZz0sPnHz7h`
 
-4. COMPONENT PIPELINE ROADMAP (DAY 15 TO DAY 20)
-- [NEXT] Day 15 (Component Pipeline: Steel Connections):
-  * [COMPLETED] Refreshed `config/reference_manifest.json` SHA-256 hashes & Drive File IDs for updated steel procedures and `rules.md` (92/92 verified, 0 missing, 0 mismatches).
-  * [READY] Implement `core/aisc360/` (bolts, welds, shear tab incl. HSS punching shear, single/double angle, base plate, and unified HSS-to-HSS Dual LRFD/ASD connection checks) + Steel Panel + unit tests.
-- [PENDING] Day 16 (Component Pipeline: Concrete & CMU Anchorage): `core/aci318/` & `core/tms402/` (anchors, CMU breakout, cantilever post) + Anchorage Panel + unit tests.
-- [PENDING] Day 17 (Phase 5: Cloud Synchronization): `CloudSyncService` (Google Drive OAuth 2.0 raw sync, SHA-256 conflict detection, offline cache) + Sync Dialog.
-- [PENDING] Day 18 (Phase 6: Full Engineering Exporters): Finalize 17-col Arial 10pt Excel workbook generator & 12-section ReportLab PDF generator across all modules.
-- [PENDING] Day 19 (Phase 7: Full 5-Level QA & Windows Packaging): Comprehensive pytest suite (Unit, Benchmark, Regression, E2E) + PyInstaller standalone Windows .exe build.
-- [PENDING] Day 20 (Phase 7: Final Polish & Release): End-to-end UAT, performance profiling, documentation update, and V1.0 release sign-off.
+4. CONSOLIDATED EXECUTION ROADMAP TO 100% V1.0 COMPLETION (PHASE 0 TO PHASE 10)
+- [COMPLETED 100%] Phase 0 (`WP-0` — Read-Only Baseline Audit & Gate 0 Cleanup):
+  * Owner: `Primary Agent` + `qa-verifier`. Verified `F-01..F-22`, restored 4 `(1)` reference filenames (`92/92` SHA-256 verified), recorded SQLite v1 fixture, UI screenshots, and 20/20 ASD/LRFD numerical baselines.
+- [COMPLETED 100%] Phase 1 (`WP-0b` — P0 Live-Data Safety Hotfix):
+  * Owner: `desktop-app`. Removed sample values, sample sheet/table, `c_delta=0.69` fallback, and `UI-01` diagram ghosting from live new-item paths (`INCOMPLETE` start).
+- [COMPLETED 100%] Phase 2 (`WP-1a` + `WP-2` + `WP-3` — Parallel Foundational Contracts):
+  * `Phase 2A (WP-1a)`: `cloud-data` — SQLite Schema v2 migration (`PRAGMA user_version = 2`) with backup and v1 revision preservation tests (17/17 passing).
+  * `Phase 2B (WP-2)`: `calculation-engine` — `CalcStep`, `Quantity`, `RefSpec`, restricted math markup validator, `ReferenceDataPort`, additive `CalculationResult.trace` (68 new tests passing).
+  * `Phase 2C (WP-3)`: `desktop-app` — `ModuleRegistry`, `ModuleSpec`, `FieldSpec`, unified catalog/dispatch, gated Steel & Concrete as `COMING_SOON` (154/154 total tests passing).
+- [COMPLETED 100%] Phase 3 (`WP-1b` + `WP-4` — Item Services & `WorkspaceController`):
+  * Owners: `desktop-app` + `cloud-data`. `ProjectService` item/group APIs + pure-Python `WorkspaceController` (`Run` vs. `Save Revision`, `is_stale` hashing).
+- [COMPLETED 100%] Phase 4 (`WP-5` + `WP-6` — Sidebar Tree & Schema-Driven `WorkspaceHost`):
+  * Owner: `desktop-app`. Persistent sidebar tree with drag-and-drop reorder, context menu, Add dialog wiring, functional Pages 0/1/6/7, and schema-driven `WorkspaceHost`/`InputForm`.
+- [COMPLETED 100%] Phase 5 (`WP-7` + `WP-8` + `WP-9` — Math Renderer, `DiagramSpec` & Trace Migration):
+  * Owners: `desktop-app` + `calculation-engine`. Local offline KaTeX assets (`gui/assets/katex/`), `DiagramSpec` builders, and `CalcStep` trace migration across Day 13/14 engines with 100% numerical parity.
+- [COMPLETED 100%] Phase 6 (`WP-11` + `Day 15` & `Day 16` — Steel & Concrete/CMU Engines):
+  * Owner: `calculation-engine` (+ `desktop-app`, `qa-verifier`). Implemented `core/aisc360/` (6 Steel modules) and `core/aci318/` + `core/tms402/` (3 Concrete/CMU modules), wired into `ModuleRegistry` & `DiagramSpec`.
+- [COMPLETED 100%] Phase 7 (`WP-10` + `Day 18` — Ordered Multi-Item Reports & Exporters):
+  * Owner: `desktop-app`. Ordered multi-item PDF/XLSX export consuming `trace` and `DiagramSpec`, resilient multi-header CSV parsing across all 73 disk CSVs, and `HUS210-2` catalog/benchmark audit.
+- [COMPLETED 100%] Phase 8 (`Day 17` — Google Drive Raw-File Synchronization):
+  * Owner: `cloud-data`. OAuth 2.0 + `keyring`, raw KB sync, SHA-256 conflict preservation, non-blocking offline mode.
+- [COMPLETED 100%] Phase 9 (`Day 19` — Full 8-Category QA & Windows Packaging):
+  * Owner: `qa-verifier` + all owners. L1–L5 + GUI + Offline + PyInstaller build (`StructuralCalculationApp.exe`, **240/240 pytest tests passing**).
+- [COMPLETED 100%] Phase 10 (`Day 20` — Final Verification & V1.0 Release Readiness):
+  * Owner: `Primary Agent` + `qa-verifier`. Section 16 Release Gate verified; ready for User V1.0 sign-off.
 ================================================================================

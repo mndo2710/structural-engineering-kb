@@ -1,7 +1,7 @@
 """PySide6 Wood Connections & Lateral Interactive 4-Panel Workspace (Day 14 Vertical Slice).
 
-Conforms to SAD v1.0 Sections 8.2.B, 8.3, 8.4 & Master Rules 2, 5, 6, 8.
-Supports all 5 V1 Wood Connections & Lateral workflows:
+Conforms to SAD v1.1 Sections 6.1, 8.1 & Master Rules 2, 5, 6, 8.
+Supports all V1 Wood Connections & Lateral workflows via ModuleRegistry:
   1. Bolt / Dowel Lateral & Group Tear-Out (NDS 2024 Ch. 12 & App. E)
   2. Nail / Wood Screw / Lag Screw / Simpson SDS (NDS 2024 Ch. 12 & ESR-2236)
   3. Wood-Frame Shear Wall & Holdown Anchorage (SDPWS 2021 Sec. 4.3 & Simpson HDU)
@@ -12,8 +12,8 @@ Supports all 5 V1 Wood Connections & Lateral workflows:
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from PySide6.QtCore import Qt, QRectF, QPointF, Signal
-from PySide6.QtGui import QColor, QFont, QPainter, QPen, QBrush, QPolygonF
+from PySide6.QtCore import Qt, QRectF, Signal
+from PySide6.QtGui import QColor, QFont, QPainter, QPen, QBrush
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -23,42 +23,93 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.models import CalculationResult, CalculationStatus, DesignMethod, DiagramSpec
+from app.registry import ModuleRegistry, get_module_registry
 from app.services.calculation_service import CalculationService
 from app.services.knowledge_base_service import KnowledgeBaseService
 from app.services.project_service import ProjectService
 from app.services.report_service import ReportService
-from core.common.calculation_result import CalculationResult, DesignMethod
 from gui.widgets.base_workspace import BaseCalculationWorkspace, DiagramWidget
 
 
+_FASTENER_TEMPLATE_IDS = {
+    "wood_nail_lateral",
+    "wood_screw_withdrawal",
+    "wood_combined_lateral_withdrawal",
+}
+
+
+def _build_wood_module_configs(registry: ModuleRegistry) -> Dict[str, Dict[str, Any]]:
+    configs: Dict[str, Dict[str, Any]] = {}
+    for spec in registry.list_modules(category="Wood (NDS)", canonical_only=True):
+        configs[spec.module_id] = {
+            "label": f"{spec.title} ({registry.resolve_code_display(spec.module_id)})",
+            "code": registry.resolve_code_display(spec.module_id),
+            "fields": [(f.key, f.label, f.benchmark_value) for f in spec.fields],
+        }
+    return configs
+
+
 class WoodDiagramWidget(DiagramWidget):
-    """Dynamic 2D schematic structural diagram for all 5 Wood Connections & Lateral modules."""
+    """Dynamic 2D schematic structural diagram for all Wood Connections & Lateral modules."""
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.module_id = "wood_bolt_lateral"
         self.params: Dict[str, Any] = {}
-        self.summary_note = "e_end,m = 3.0 in < 7D = 4.375 in -> C_Delta = 0.69"
+        self.summary_note = ""
 
     def update_wood_diagram(
         self,
         module_id: str,
         params: Dict[str, Any],
         summary_note: str = "",
+        has_result: bool = True,
     ) -> None:
         self.module_id = module_id
         self.params = dict(params)
-        if summary_note:
-            self.summary_note = summary_note
+        self.summary_note = summary_note
+        self.has_result = has_result
 
-        # Keep base class attributes synced for wood_bolt_lateral
-        self.p_demand_lb = float(params.get("P_demand_lbs", params.get("p_demand", 340.0)))
-        self.t_m_in = float(params.get("t_m_in", 1.5))
-        self.t_s_in = float(params.get("t_s_in", 1.5))
-        self.e_end_m_in = float(params.get("e_end_m_in", 3.0))
-        self.bolt_dia_in = float(params.get("D_in", 0.625))
-        self.c_delta = float(params.get("C_Delta", 0.69))
+        self.p_demand_lb = (
+            float(params["P_demand_lbs"])
+            if "P_demand_lbs" in params and params["P_demand_lbs"] is not None
+            else (float(params["p_demand"]) if "p_demand" in params and params["p_demand"] is not None else None)
+        )
+        self.t_m_in = float(params["t_m_in"]) if params.get("t_m_in") is not None else None
+        self.t_s_in = float(params["t_s_in"]) if params.get("t_s_in") is not None else None
+        self.e_end_m_in = float(params["e_end_m_in"]) if params.get("e_end_m_in") is not None else None
+        self.e_end_s_in = float(params["e_end_s_in"]) if params.get("e_end_s_in") is not None else None
+        self.bolt_dia_in = float(params["D_in"]) if params.get("D_in") is not None else None
+        self.c_delta = float(params["C_Delta"]) if params.get("C_Delta") is not None else None
         self.update()
+
+    def clear_diagram(self, module_id: Optional[str] = None) -> None:
+        if module_id:
+            self.module_id = module_id
+        self.params = {}
+        self.summary_note = ""
+        self.has_result = False
+        self.p_demand_lb = None
+        self.c_delta = None
+        self.t_m_in = None
+        self.t_s_in = None
+        self.e_end_m_in = None
+        self.e_end_s_in = None
+        self.bolt_dia_in = None
+        self.update()
+
+    def apply_diagram_spec(self, spec: DiagramSpec) -> None:
+        """Apply Qt-independent DiagramSpec directly to Panel 2 canvas (WP-8)."""
+        merged: Dict[str, Any] = dict(spec.geometry_params)
+        if spec.has_engine_result:
+            merged.update(spec.derived_params)
+        self.update_wood_diagram(
+            module_id=spec.module_id,
+            params=merged,
+            summary_note=spec.summary_badge if spec.has_engine_result else "",
+            has_result=spec.has_engine_result,
+        )
 
     def paintEvent(self, event) -> None:
         if "bolt" in self.module_id:
@@ -78,7 +129,6 @@ class WoodDiagramWidget(DiagramWidget):
         force_pen = QPen(QColor("#d96818"), 2.0)
 
         if "shear_wall" in self.module_id:
-            # Draw wood shear wall panel with boundary posts and HDU holdowns
             painter.setPen(struct_pen)
             painter.setBrush(QBrush(QColor("#fde6cf")))
             sw_w = 110
@@ -86,21 +136,20 @@ class WoodDiagramWidget(DiagramWidget):
             sw_x = int(cx - sw_w * 0.5)
             sw_y = int(cy - sw_h * 0.5)
             painter.drawRect(sw_x, sw_y, sw_w, sw_h)
-            # Holdown brackets at bottom corners
             painter.setBrush(QBrush(QColor("#007bff")))
             painter.drawRect(sw_x + 4, sw_y + sw_h - 24, 12, 24)
             painter.drawRect(sw_x + sw_w - 16, sw_y + sw_h - 24, 12, 24)
-            # Top lateral shear arrow V
             painter.setPen(force_pen)
             painter.drawLine(sw_x - 50, sw_y + 4, sw_x - 4, sw_y + 4)
             painter.setFont(QFont("Segoe UI", 8, QFont.Bold))
-            v_dem = self.params.get("V_asd_lbs", 2240.0)
-            t_hd = self.params.get("T_holdown_demand_lbs", 5300.0)
-            painter.drawText(QRectF(sw_x - 125, sw_y - 6, 120, 20), Qt.AlignLeft, f"V = {v_dem:.0f} lbs")
-            painter.drawText(QRectF(sw_x - 125, sw_y + sw_h - 20, 120, 20), Qt.AlignLeft, f"T_HD = {t_hd:.0f} lbs")
+            v_dem = self.params.get("V_asd_lbs") if self.has_result else None
+            t_hd = self.params.get("T_holdown_demand_lbs") if self.has_result else None
+            v_txt = f"V = {v_dem:.0f} lbs" if isinstance(v_dem, (int, float)) else "V = —"
+            t_txt = f"T_HD = {t_hd:.0f} lbs" if isinstance(t_hd, (int, float)) else "T_HD = —"
+            painter.drawText(QRectF(sw_x - 125, sw_y - 6, 120, 20), Qt.AlignLeft, v_txt)
+            painter.drawText(QRectF(sw_x - 125, sw_y + sw_h - 20, 120, 20), Qt.AlignLeft, t_txt)
 
         elif "diaphragm" in self.module_id:
-            # Plan view of blocked diaphragm with chords and collector drag strut
             painter.setPen(struct_pen)
             painter.setBrush(QBrush(QColor("#f8f9fa")))
             dw = 180
@@ -108,14 +157,15 @@ class WoodDiagramWidget(DiagramWidget):
             dx = int(cx - dw * 0.5)
             dy = int(cy - dh * 0.5)
             painter.drawRect(dx, dy, dw, dh)
-            v_u = self.params.get("v_unit_demand_plf", 378.0)
-            t_ch = self.params.get("T_chord_max_lbs", 6804.0)
+            v_u = self.params.get("v_unit_demand_plf") if self.has_result else None
+            t_ch = self.params.get("T_chord_max_lbs") if self.has_result else None
+            t_txt = f"T_chord = {t_ch:.0f} lbs" if isinstance(t_ch, (int, float)) else "T_chord = —"
+            v_txt = f"v = {v_u:.1f} plf" if isinstance(v_u, (int, float)) else "v = —"
             painter.setPen(force_pen)
             painter.setFont(QFont("Segoe UI", 8, QFont.Bold))
-            painter.drawText(QRectF(dx, dy - 20, 180, 18), Qt.AlignCenter, f"T_chord = {t_ch:.0f} lbs | v = {v_u:.1f} plf")
+            painter.drawText(QRectF(dx, dy - 20, 190, 18), Qt.AlignCenter, f"{t_txt} | {v_txt}")
 
         else:
-            # Fastener or Simpson Hanger / Hurricane Tie schematic
             painter.setPen(struct_pen)
             painter.setBrush(QBrush(QColor("#fde6cf")))
             painter.drawRect(int(cx - 75), int(cy - 28), 55, 65)
@@ -123,15 +173,16 @@ class WoodDiagramWidget(DiagramWidget):
             painter.setBrush(QBrush(QColor("#adb5bd")))
             painter.drawRect(int(cx - 26), int(cy - 16), 14, 44)
 
-        note_w = 275.0
-        note_h = 24.0
-        note_rect = QRectF(w - note_w - 12, 10, note_w, note_h)
-        painter.setPen(QPen(QColor("#ffeeba"), 1))
-        painter.setBrush(QBrush(QColor("#fff3cd")))
-        painter.drawRoundedRect(note_rect, 4, 4)
-        painter.setPen(QPen(QColor("#856404"), 1))
-        painter.setFont(QFont("Segoe UI", 8, QFont.Bold))
-        painter.drawText(note_rect, Qt.AlignCenter, self.summary_note)
+        if self.has_result and self.summary_note:
+            note_w = 275.0
+            note_h = 24.0
+            note_rect = QRectF(w - note_w - 12, 10, note_w, note_h)
+            painter.setPen(QPen(QColor("#ffeeba"), 1))
+            painter.setBrush(QBrush(QColor("#fff3cd")))
+            painter.drawRoundedRect(note_rect, 4, 4)
+            painter.setPen(QPen(QColor("#856404"), 1))
+            painter.setFont(QFont("Segoe UI", 8, QFont.Bold))
+            painter.drawText(note_rect, Qt.AlignCenter, self.summary_note)
 
 
 class WoodCalculationWorkspace(BaseCalculationWorkspace):
@@ -143,132 +194,62 @@ class WoodCalculationWorkspace(BaseCalculationWorkspace):
     exportExcelRequested = Signal(str)
     exportPdfRequested = Signal(str)
 
-    MODULE_CONFIGS: Dict[str, Dict[str, Any]] = {
-        "wood_bolt_lateral": {
-            "label": "Bolt / Dowel Lateral & Group Tear-Out (NDS Ch. 12 & App. E)",
-            "code": "NDS 2024",
-            "fields": [
-                ("D_in", "Bolt Diameter D (in.)", "0.625"),
-                ("shear_planes", "Shear Planes (Single Shear / Double Shear)", "Single Shear"),
-                ("F_yb_psi", "Bolt Bending Yield F_yb (psi)", "45000.0"),
-                ("main_species", "Main Member Species", "Douglas Fir-Larch"),
-                ("side_material", "Side Member (Wood / Steel / Concrete)", "Wood"),
-                ("t_m_in", "Main Thickness t_m (in.)", "1.5"),
-                ("t_s_in", "Side Thickness t_s (in.)", "1.5"),
-                ("e_end_m_in", "Loaded End Distance e_end,m (in.)", "3.0"),
-                ("n_rows", "Number of Bolt Rows n_rows", "1"),
-                ("n_bolts_per_row", "Bolts per Row n_b", "1"),
-                ("C_D", "Load Duration Factor C_D", "1.00"),
-                ("P_demand_lbs", "Applied Tension Demand P (lbs)", "340.0"),
-            ],
-        },
-        "wood_fastener_nds": {
-            "label": "Nail / Wood Screw / Lag Screw / Simpson SDS (NDS Ch. 12)",
-            "code": "NDS 2024 / ICC-ES ESR-2236",
-            "fields": [
-                ("fastener_type", "Type (Lag_Screw / Simpson_SDS / Wood_Screw / Common_Nail)", "Lag_Screw"),
-                ("species", "Wood Species", "Douglas Fir-Larch"),
-                ("side_member_type", "Side Member (Wood / Steel)", "Wood"),
-                ("D_in", "Fastener Diameter D (in.)", "0.375"),
-                ("L_in", "Fastener Length L (in.)", "4.0"),
-                ("t_s_in", "Side Thickness t_s (in.)", "1.5"),
-                ("n_fasteners", "Total Fasteners N", "4"),
-                ("C_D", "Load Duration Factor C_D", "1.00"),
-                ("V_demand_lbs", "Lateral Shear Demand V (lbs)", "650.0"),
-                ("T_demand_lbs", "Axial Withdrawal Demand T (lbs)", "320.0"),
-            ],
-        },
-        "wood_shear_wall_sdpws": {
-            "label": "Wood-Frame Shear Wall & Holdown (SDPWS 2021 Sec. 4.3)",
-            "code": "SDPWS 2021 / NDS 2024",
-            "fields": [
-                ("h_ft", "Wall Clear Height h (ft)", "10.0"),
-                ("bs_ft", "Wall Segment Width b_s (ft)", "4.0"),
-                ("V_asd_lbs", "ASD Seismic Shear V_ASD (lbs)", "2240.0"),
-                ("V_lrfd_lbs", "LRFD Seismic Shear V_LRFD (lbs)", "3200.0"),
-                ("w_DL_plf", "Tributary Dead Load w_DL (plf)", "250.0"),
-                ("sheathing_category", "Sheathing Category (Structural I / Sheathing)", "Structural I"),
-                ("panel_thickness", "Panel Thickness (15/32 / 7/16 / 3/8)", "15/32"),
-                ("nail_size", "Common Nail Size (10d / 8d / 6d)", "10d"),
-                ("edge_spacing_in", "Edge Nail Spacing (6 / 4 / 3 / 2 in.)", "3"),
-                ("holdown_model", "Simpson Holdown Model", "HDU5-SDS2.5"),
-            ],
-        },
-        "wood_diaphragm_sdpws": {
-            "label": "Wood Diaphragm, Chord & Collector (SDPWS 2021 Sec. 4.2)",
-            "code": "SDPWS 2021 / NDS 2024",
-            "fields": [
-                ("L_span_ft", "Diaphragm Span L (ft)", "72.0"),
-                ("W_depth_ft", "Diaphragm Depth W (ft)", "30.0"),
-                ("w_asd_plf", "ASD Uniform Load w_ASD (plf)", "315.0"),
-                ("w_lrfd_plf", "LRFD Uniform Load w_LRFD (plf)", "450.0"),
-                ("sheathing_grade", "Grade (Sheathing and Single-Floor / Structural I)", "Sheathing and Single-Floor"),
-                ("nail_size", "Common Nail Size (10d / 8d)", "10d"),
-                ("panel_thickness", "Panel Thickness (15/32 / 7/16 / 3/8)", "15/32"),
-                ("boundary_spacing_in", "Boundary Nail Spacing (6 / 4 / 2.5 / 2 in.)", "4.0"),
-                ("unsupported_drag_ft", "Unsupported Collector Length (ft)", "15.0"),
-                ("strap_model", "Simpson Collector Strap Model", "MSTC66"),
-            ],
-        },
-        "wood_simpson_hanger_tie": {
-            "label": "Simpson Joist Hanger & Hurricane Tie (C-C-2026)",
-            "code": "Simpson C-C-2026 / NDS 2024",
-            "fields": [
-                ("hanger_model", "Simpson Hanger Model", "HUS210-2"),
-                ("hanger_species", "Hanger Wood Species (DF/SP / SPF/HF)", "DF/SP"),
-                ("H_joist_in", "Carried Member Depth H (in.)", "9.25"),
-                ("R_floor_lbs", "Floor Download R_floor (lbs, CD=1.00)", "2600.0"),
-                ("R_roof_lbs", "Roof Download R_roof (lbs, CD=1.25)", "3150.0"),
-                ("U_hanger_lbs", "Hanger Wind Uplift U (lbs, CD=1.60)", "1450.0"),
-                ("tie_model", "Hurricane Tie Model", "H10A (Nails)"),
-                ("tie_species", "Hurricane Tie Species (SPF/HF / DF/SP)", "SPF/HF"),
-                ("U_tie_lbs", "Rafter Wind Uplift U_tie (lbs)", "520.0"),
-                ("F1_tie_lbs", "In-Plane Shear F1 (lbs)", "320.0"),
-                ("F2_tie_lbs", "Out-of-Plane Reaction F2 (lbs)", "95.0"),
-            ],
-        },
-    }
+    MODULE_CONFIGS: Dict[str, Dict[str, Any]] = _build_wood_module_configs(get_module_registry())
 
     def __init__(
         self,
         calc_service: Optional[CalculationService] = None,
         project_service: Optional[ProjectService] = None,
         report_service: Optional[ReportService] = None,
+        start_blank: bool = False,
         parent: Optional[QWidget] = None,
     ) -> None:
+        self.registry = calc_service.registry if calc_service else get_module_registry()
+        self.MODULE_CONFIGS = _build_wood_module_configs(self.registry)
         self.kb_service = calc_service.kb_service if calc_service else KnowledgeBaseService()
         self.project_service = project_service or ProjectService()
         self.calc_service = calc_service or CalculationService(
             kb_service=self.kb_service,
             project_service=self.project_service,
+            registry=self.registry,
         )
         self.report_service = report_service or ReportService(
             kb_service=self.kb_service,
             project_service=self.project_service,
         )
         self._active_module_id = "wood_bolt_lateral"
-        self._input_edits: Dict[str, QLineEdit] = {}
+        self._active_template_id = "wood_bolt_lateral"
+        self._wood_start_blank = start_blank
 
         super().__init__(
             module_title="Wood Connections & Lateral",
-            default_code="NDS 2024 / SDPWS 2021",
+            default_code=self.registry.resolve_code_display(self._active_module_id),
+            start_blank=True,
             parent=parent,
         )
 
-        # Replace generic diagram with WoodDiagramWidget
+        # Replace generic diagram cleanly to prevent double-diagram ghosting (UI-01)
         parent_card_layout = self.diagram_widget.parentWidget().layout()
         old_diag = self.diagram_widget
         self.diagram_widget = WoodDiagramWidget(self)
         parent_card_layout.replaceWidget(old_diag, self.diagram_widget)
+        old_diag.hide()
+        old_diag.setParent(None)
         old_diag.deleteLater()
 
         self.calculateRequested.connect(self._execute_active_calculation)
-        self.run_active_module()
+        self.reset_inputs(blank=self._wood_start_blank)
+        if not self._wood_start_blank:
+            self.run_active_module()
 
-    def _populate_sample_inputs(self) -> None:
+    def _build_input_form(self, blank: bool) -> None:
         while self.form_layout.rowCount() > 0:
             self.form_layout.removeRow(0)
         self._input_edits.clear()
+
+        spec = self.registry.resolve(self._active_template_id)
+        self._active_field_specs = spec.fields
+        self.default_code = self.registry.resolve_code_display(spec.module_id)
 
         lbl_mod = QLabel("Wood Sub-Module")
         lbl_mod.setStyleSheet("font-size: 11px; font-weight: bold; color: #007bff;")
@@ -282,11 +263,11 @@ class WoodCalculationWorkspace(BaseCalculationWorkspace):
         self.form_layout.addRow(lbl_mod)
         self.form_layout.addRow(self.combo_module)
 
-        cfg = self.MODULE_CONFIGS[self._active_module_id]
-        for key, label_str, default_val in cfg["fields"]:
-            lbl = QLabel(label_str)
+        for fld in spec.fields:
+            lbl = QLabel(fld.label)
             lbl.setStyleSheet("font-size: 11px; color: #495057;")
-            edit = QLineEdit(str(default_val))
+            init_val = "" if blank else ("" if fld.benchmark_value is None else str(fld.benchmark_value))
+            edit = QLineEdit(init_val)
             edit.setAlignment(Qt.AlignRight)
             edit.setFixedHeight(26)
             edit.setStyleSheet("""
@@ -300,7 +281,7 @@ class WoodCalculationWorkspace(BaseCalculationWorkspace):
                     color: #0000ff;
                 }
             """)
-            self._input_edits[key] = edit
+            self._input_edits[fld.key] = edit
             self.form_layout.addRow(lbl, edit)
 
         export_row = QHBoxLayout()
@@ -319,38 +300,107 @@ class WoodCalculationWorkspace(BaseCalculationWorkspace):
         export_row.addWidget(self.btn_export_pdf)
         self.form_layout.addRow(export_row)
 
-    def select_submodule(self, module_id: str) -> None:
-        if module_id in self.MODULE_CONFIGS:
-            self._active_module_id = module_id
-            self._populate_sample_inputs()
+    def _populate_blank_inputs(self) -> None:
+        pass
+
+    def _populate_sample_inputs(self) -> None:
+        self._build_input_form(blank=False)
+
+    def reset_inputs(self, blank: bool = True) -> None:
+        """Reset panel inputs to blank (live-safe) or benchmark defaults."""
+        if blank:
+            self.clear_inputs_to_blank()
+        else:
+            self.load_benchmark_defaults()
+
+    def clear_inputs_to_blank(self) -> None:
+        """Clear all input controls to blank and reset output panels to INCOMPLETE."""
+        self._build_input_form(blank=True)
+        self.clear_to_incomplete()
+
+    def load_benchmark_defaults(self) -> None:
+        """Populate controlled benchmark defaults for explicit demos and regression tests."""
+        self._build_input_form(blank=False)
+
+    def clear_to_incomplete(self, reason: str = "Enter required inputs and click Run Calculation.") -> None:
+        super().clear_to_incomplete(reason)
+        if isinstance(self.diagram_widget, WoodDiagramWidget):
+            self.diagram_widget.clear_diagram(self._active_module_id)
+
+    def show_invalid_input(self, message: str) -> None:
+        super().show_invalid_input(message)
+        if isinstance(self.diagram_widget, WoodDiagramWidget):
+            self.diagram_widget.clear_diagram(self._active_module_id)
+
+    def select_submodule(self, module_id: str, start_blank: bool = False) -> None:
+        """Switch active Wood module or specialized template (resolving aliases cleanly)."""
+        spec = self.registry.get(module_id)
+        resolved_id = spec.module_id if spec is not None else module_id
+
+        if resolved_id in _FASTENER_TEMPLATE_IDS:
+            self._active_template_id = resolved_id
+            self._active_module_id = "wood_fastener_nds"
+        elif resolved_id in self.MODULE_CONFIGS:
+            self._active_template_id = resolved_id
+            self._active_module_id = resolved_id
+        else:
+            return
+
+        self.reset_inputs(blank=start_blank)
+        if not start_blank:
             self.run_active_module()
 
     def _on_submodule_changed(self, index: int) -> None:
         mod_id = self.combo_module.itemData(index)
         if mod_id and mod_id != self._active_module_id:
             self._active_module_id = mod_id
-            self._populate_sample_inputs()
-            self.run_active_module()
+            self._active_template_id = mod_id
+            self.reset_inputs(blank=self._wood_start_blank)
+            if not self._wood_start_blank:
+                self.run_active_module()
 
     def get_form_inputs(self) -> Dict[str, Any]:
-        parsed: Dict[str, Any] = {}
+        spec = self.registry.get(self._active_template_id)
+        parsed: Dict[str, Any] = dict(spec.preset_inputs) if spec else {}
         for k, edit in self._input_edits.items():
             raw = edit.text().strip()
+            if raw == "":
+                continue
             try:
                 parsed[k] = float(raw)
             except ValueError:
                 parsed[k] = raw
         return parsed
 
+    def validate_and_get_inputs(self):
+        parsed, err_status, err_msg = super().validate_and_get_inputs()
+        if err_status is not None:
+            return parsed, err_status, err_msg
+        spec = self.registry.get(self._active_template_id)
+        if spec and spec.preset_inputs:
+            merged = dict(spec.preset_inputs)
+            merged.update(parsed)
+            return merged, None, ""
+        return parsed, None, ""
+
     def set_design_method(self, method: DesignMethod) -> None:
         super().set_design_method(method)
-        self.run_active_module()
+        _, err_status, _ = self.validate_and_get_inputs()
+        if err_status is None:
+            self.run_active_module()
 
-    def run_active_module(self) -> CalculationResult:
-        inputs = self.get_form_inputs()
+    def run_active_module(self) -> Optional[CalculationResult]:
+        inputs, err_status, err_msg = self.validate_and_get_inputs()
+        if err_status == CalculationStatus.INCOMPLETE:
+            self.clear_to_incomplete(err_msg)
+            return None
+        if err_status == CalculationStatus.INVALID_INPUT:
+            self.show_invalid_input(err_msg)
+            return None
+
         method = self.get_selected_design_method()
         result = self.calc_service.run_calculation(
-            module_id=self._active_module_id,
+            module_id=self._active_template_id,
             inputs=inputs,
             design_method=method,
         )
@@ -359,7 +409,7 @@ class WoodCalculationWorkspace(BaseCalculationWorkspace):
 
     def _execute_active_calculation(self, inputs: Dict[str, Any], method: DesignMethod) -> None:
         result = self.calc_service.run_calculation(
-            module_id=self._active_module_id,
+            module_id=self._active_template_id,
             inputs=inputs,
             design_method=method,
         )
@@ -375,6 +425,7 @@ class WoodCalculationWorkspace(BaseCalculationWorkspace):
                 module_id=result.module_id,
                 params=diag_params,
                 summary_note=note,
+                has_result=True,
             )
 
     def export_current_to_excel(self, output_path: Path) -> Path:
@@ -390,6 +441,8 @@ class WoodCalculationWorkspace(BaseCalculationWorkspace):
     def _on_export_xlsx_clicked(self) -> None:
         if self._current_result is None:
             self.run_active_module()
+        if self._current_result is None:
+            return
         out_path = Path("storage/projects") / f"{self._current_result.module_id}_{self._current_result.design_method.value}.xlsx"
         saved = self.export_current_to_excel(out_path)
         self.exportExcelRequested.emit(str(saved))
@@ -397,6 +450,8 @@ class WoodCalculationWorkspace(BaseCalculationWorkspace):
     def _on_export_pdf_clicked(self) -> None:
         if self._current_result is None:
             self.run_active_module()
+        if self._current_result is None:
+            return
         out_path = Path("storage/projects") / f"{self._current_result.module_id}_{self._current_result.design_method.value}.pdf"
         saved = self.export_current_to_pdf(out_path)
         self.exportPdfRequested.emit(str(saved))

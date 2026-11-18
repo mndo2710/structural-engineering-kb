@@ -10,27 +10,37 @@ import math
 from typing import Any, Dict, List, Optional
 import uuid
 
-from app.services.knowledge_base_service import KnowledgeBaseService
-from core.asce7.seismic.seismic_loads import calculate_nonstructural_seismic_fp
-from core.asce7.wind.velocity_pressure import calculate_velocity_pressure
+from core.asce7.seismic.seismic_loads import TABLE_13_5_1_FILE, calculate_nonstructural_seismic_fp
+from core.asce7.wind.velocity_pressure import (
+    TABLE_26_6_1_FILE,
+    TABLE_26_10_1_FILE,
+    _build_ref,
+    calculate_velocity_pressure,
+)
 from core.common.calculation_result import (
+    AcceptanceCriterion,
+    CalcStep,
     CalculationResult,
     CalculationStatus,
     DesignMethod,
     LimitStateResult,
+    LoadPathStage,
+    Quantity,
+    RefSpec,
 )
 from core.common.validation import (
     validate_design_method,
     validate_non_negative,
     validate_positive,
 )
+from core.ports.reference_data_port import ReferenceDataPort
 
 
 FIGURE_29_4_2_FILE = "ASCE7-22_Figure_29.4-2.csv"
 
 
 def lookup_open_frame_cf(
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     solidity_ratio_epsilon: float,
     member_shape: str = "Flat-Sided",
     d_sqrt_qz: float = 1.0,
@@ -67,7 +77,7 @@ def lookup_open_frame_cf(
 
 def calculate_trellis_loads(
     inputs: Dict[str, Any],
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     design_method: DesignMethod = DesignMethod.ASD,
     calculation_id: Optional[str] = None,
 ) -> CalculationResult:
@@ -189,6 +199,119 @@ def calculate_trellis_loads(
     gov_ls = max(limit_states, key=lambda x: x.dcr)
     overall_status = CalculationStatus.PASS if all(ls.status == CalculationStatus.PASS for ls in limit_states) else CalculationStatus.FAIL
 
+    ref_proc = _build_ref(
+        kb, "ASCE 7-22", "2022", "procedure", "Open-Frame Trellis Loads Procedure",
+        identifier="cc_trellis_open_wind_seismic_workflow.md",
+        fallback_path="procedures/01_loads_and_seismic/cc_trellis_open_wind_seismic_workflow.md",
+    )
+    ref_f29 = _build_ref(kb, "ASCE 7-22", "2022", "figure", "Fig. 29.4-2", identifier=FIGURE_29_4_2_FILE)
+    ref_t26_6 = _build_ref(kb, "ASCE 7-22", "2022", "table", "Table 26.6-1", identifier=TABLE_26_6_1_FILE)
+    ref_t26_10 = _build_ref(kb, "ASCE 7-22", "2022", "table", "Table 26.10-1", identifier=TABLE_26_10_1_FILE)
+    ref_t13_5 = _build_ref(kb, "ASCE 7-22", "2022", "table", "Table 13.5-1", identifier=TABLE_13_5_1_FILE)
+
+    if "wall" in support_condition.lower() or "ledger" in support_condition.lower():
+        seis_sym = r"F_p = \frac{0.4 \cdot S_{DS} \cdot I_p \cdot W_p \cdot H_f}{R_{\mu}} \cdot \left(\frac{C_{AR}}{R_{po}}\right)"
+        seis_sub = rf"F_p = {fp_seismic_lbs:.2f} \text{{ lbs}} \text{{ (Ch. 13 nonstructural)}}"
+        seis_refs = (RefSpec("ASCE 7-22", "2022", "equation", "Eq. 13.3-1"), ref_t13_5, ref_proc)
+    else:
+        seis_sym = r"V_s = \frac{S_{DS}}{R} \cdot W_p"
+        seis_sub = rf"\frac{{{sds_g:.2f}}}{{{float(inputs.get('R_freestanding', 2.5)):.2f}}} \cdot {wp_total_lbs:.1f} = {fp_seismic_lbs:.2f} \text{{ lbs}}"
+        seis_refs = (RefSpec("ASCE 7-22", "2022", "table", "Table 15.4-2"), ref_proc)
+
+    trace = (
+        CalcStep(
+            step_id="S1_GEO",
+            stage=LoadPathStage.STAGE_1_GEOMETRY_AND_LIMITS,
+            title="Open-Frame Elevation Solidity & Effective Area",
+            symbolic=r"\epsilon_{elev} = \frac{A_s}{A_g} \leq 0.70",
+            substituted=rf"\epsilon_{{elev}} = {epsilon_elev:.3f} \leq 0.70, A_{{f,eff}} = {af_eff_ft2:.2f} \text{{ ft}}^2",
+            variables={
+                "epsilon_elev": Quantity(r"\epsilon_{elev}", epsilon_elev, "ratio", "Elevation solidity ratio"),
+                "epsilon_plan": Quantity(r"\epsilon_{plan}", epsilon_plan, "ratio", "Plan slat solidity ratio"),
+                "Af_eff": Quantity("A_{f,eff}", af_eff_ft2, "ft^2", "Effective projected solid area"),
+                "N_p": Quantity("N_p", num_posts, "", "Number of supporting posts"),
+            },
+            result_value=round(epsilon_elev, 3),
+            result_unit="ratio",
+            acceptance=AcceptanceCriterion("<=", 0.70, "ratio", "ASCE 7-22 Fig. 29.4-2 open-frame solidity limit", is_dcr_check=False),
+            dcr=None,
+            status=CalculationStatus.PASS if epsilon_elev <= 0.70 else CalculationStatus.REQUIRES_REVIEW,
+            refs=(ref_f29, ref_proc),
+        ),
+        CalcStep(
+            step_id="S2_WIND",
+            stage=LoadPathStage.STAGE_2_PRIMARY_FORCE_TRANSFER,
+            title="Velocity Pressure & Open-Frame Horizontal Wind Drag",
+            symbolic=r"F_{W,horiz} = q_z \cdot K_d \cdot G \cdot C_f \cdot A_{f,eff}",
+            substituted=rf"{qz_psf:.2f} \cdot {kd:.2f} \cdot {gust_g:.2f} \cdot {cf:.2f} \cdot {af_eff_ft2:.2f} = {fw_horiz_lbs:.2f} \text{{ lbs}}",
+            variables={
+                "q_z": Quantity("q_z", qz_psf, "psf", "Velocity pressure at trellis height"),
+                "K_d": Quantity("K_d", kd, "", "Wind directionality factor"),
+                "G": Quantity("G", gust_g, "", "Gust effect factor"),
+                "C_f": Quantity("C_f", cf, "", "Open-frame force coefficient"),
+                "F_W_vert": Quantity("F_{W,vert}", round(fw_vert_lbs, 2), "lbs", "Total vertical slat uplift"),
+            },
+            result_value=round(fw_horiz_lbs, 2),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion("info", description="ASCE 7-22 Eq. 29.4-1 horizontal wind drag", is_dcr_check=False),
+            dcr=None,
+            status=CalculationStatus.PASS,
+            refs=(RefSpec("ASCE 7-22", "2022", "equation", "Eq. 29.4-1 & Fig. 29.4-2"), ref_f29, ref_t26_6, ref_t26_10),
+        ),
+        CalcStep(
+            step_id="S2_SEIS",
+            stage=LoadPathStage.STAGE_2_PRIMARY_FORCE_TRANSFER,
+            title="Seismic Lateral Force Evaluation",
+            symbolic=seis_sym,
+            substituted=seis_sub,
+            variables={
+                "W_p": Quantity("W_p", round(wp_total_lbs, 2), "lbs", "Total trellis dead weight"),
+                "H_wind_f": Quantity("f_W F_{W,horiz}", round(h_wind_factored, 2), "lbs", f"{method.value} factored wind lateral force"),
+                "H_seis_f": Quantity("f_E F_p", round(h_seis_factored, 2), "lbs", f"{method.value} factored seismic lateral force"),
+            },
+            result_value=round(fp_seismic_lbs, 2),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion("info", description="Unfactored seismic lateral demand", is_dcr_check=False),
+            dcr=None,
+            status=CalculationStatus.PASS,
+            refs=seis_refs,
+        ),
+        CalcStep(
+            step_id="S3_SHR",
+            stage=LoadPathStage.STAGE_3_CONNECTING_ELEMENT_AND_BASE_METAL,
+            title="Post Base Shear per Column",
+            symbolic=r"V_{post} = \frac{\max(f_W \cdot F_{W,horiz}, f_E \cdot F_p)}{N_p}",
+            substituted=rf"\frac{{{h_tot_factored:.1f}}}{{{num_posts}}} = {v_post_lbs:.2f} \text{{ lbs}}",
+            variables={
+                "V_cap": Quantity("V_{cap}", round(v_cap, 2), "lbs", f"{method.value} post shear capacity"),
+            },
+            result_value=round(v_post_lbs, 2),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion("<=", round(v_cap, 2), "lbs", f"{method.value} post base shear capacity", is_dcr_check=True),
+            dcr=round(dcr_v, 3),
+            status=CalculationStatus.PASS if dcr_v <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("ASCE 7-22", "2022", "section", "Sec. 29.4"), ref_proc),
+        ),
+        CalcStep(
+            step_id="S4_OTM",
+            stage=LoadPathStage.STAGE_4_SUPPORTING_MEMBER_AND_GLOBAL,
+            title="Cantilevered Post Base Overturning Moment",
+            symbolic=r"M_{base} = V_{post} \cdot H_p",
+            substituted=rf"{v_post_lbs:.2f} \cdot {hp_ft:.1f} = {m_base_lb_ft:.2f} \text{{ lb-ft}}",
+            variables={
+                "H_p": Quantity("H_p", hp_ft, "ft", "Post cantilever height"),
+                "M_cap": Quantity("M_{cap}", round(m_cap, 2), "lb-ft", f"{method.value} post base moment capacity"),
+            },
+            result_value=round(m_base_lb_ft, 2),
+            result_unit="lb-ft",
+            acceptance=AcceptanceCriterion("<=", round(m_cap, 2), "lb-ft", f"{method.value} post base overturning capacity", is_dcr_check=True),
+            dcr=round(dcr_m, 3),
+            status=CalculationStatus.PASS if dcr_m <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("ASCE 7-22", "2022", "equation", "Eq. 29.4-1 & Fig. 29.4-2"), ref_proc),
+            note="Wind governs lateral post design" if h_wind_factored >= h_seis_factored else "Seismic governs lateral post design",
+        ),
+    )
+
     return CalculationResult(
         calculation_id=calc_id,
         module_id="asce7_trellis_loads",
@@ -245,4 +368,5 @@ def calculate_trellis_loads(
         warnings=[
             "Detailing Note: Post base anchors resisting overturning moment M_base must have positive mechanical anchorage or embedded socket depth; standard non-moment standoff bases cannot resist freestanding cantilever overturning."
         ],
+        trace=trace,
     )

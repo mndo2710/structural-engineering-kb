@@ -12,27 +12,80 @@ import re
 from typing import Any, Dict, List, Optional
 import uuid
 
-from app.services.knowledge_base_service import KnowledgeBaseService
 from core.common.calculation_result import (
+    AcceptanceCriterion,
+    CalcStep,
     CalculationResult,
     CalculationStatus,
     DesignMethod,
     LimitStateResult,
+    LoadPathStage,
+    Quantity,
+    RefSpec,
 )
+from core.common.exceptions import ReferenceDataNotFoundError
 from core.common.validation import (
     validate_design_method,
     validate_non_negative,
     validate_positive,
 )
+from core.ports.reference_data_port import ReferenceDataPort
 
 
+TABLE_11_3_1_FILE = "NDS-2024_Table_11.3.1.csv"
 TABLE_12_3_3A_FILE = "NDS-2024_Table_12.3.3A.csv"
 TABLE_12_3_3_FILE = "NDS-2024_Table_12.3.3.csv"
 TABLE_12_5_1A_FILE = "NDS-2024_Table_12.5.1A.csv"
 TABLE_L1_L7_L8_FILE = "NDS-2024_Table_L1_L7_L8.csv"
 
 
-def lookup_species_specific_gravity(kb: KnowledgeBaseService, species: str = "Douglas Fir-Larch") -> float:
+def _build_nds_ref(
+    kb: ReferenceDataPort,
+    code: str,
+    edition: str,
+    kind: str,
+    locator: str,
+    identifier: Optional[str] = None,
+    fallback_path: Optional[str] = None,
+) -> RefSpec:
+    """Resolve a manifest-backed RefSpec cleanly via ReferenceDataPort without inventing IDs."""
+    kb_ref_id: Optional[str] = None
+    source_path: Optional[str] = fallback_path
+    sha256: Optional[str] = None
+
+    if identifier:
+        try:
+            entry = kb.resolve_reference(identifier)
+            kb_ref_id = entry.get("reference_id")
+            source_path = entry.get("relative_path") or source_path
+            sha256 = entry.get("sha256")
+            if not sha256 and source_path:
+                try:
+                    file_path = kb.get_file_path(identifier)
+                    sha256 = kb.compute_sha256(file_path)
+                except Exception:
+                    pass
+        except ReferenceDataNotFoundError:
+            try:
+                file_path = kb.get_file_path(identifier)
+                if source_path is None:
+                    source_path = str(file_path)
+                sha256 = kb.compute_sha256(file_path)
+            except Exception:
+                pass
+
+    return RefSpec(
+        code=code,
+        edition=edition,
+        kind=kind,
+        locator=locator,
+        kb_reference_id=kb_ref_id,
+        source_path=source_path,
+        sha256=sha256,
+    )
+
+
+def lookup_species_specific_gravity(kb: ReferenceDataPort, species: str = "Douglas Fir-Larch") -> float:
     """Lookup Assigned Specific Gravity G from NDS-2024_Table_12.3.3A.csv."""
     import csv
     csv_path = kb.get_file_path(TABLE_12_3_3A_FILE)
@@ -58,7 +111,7 @@ def lookup_species_specific_gravity(kb: KnowledgeBaseService, species: str = "Do
 
 
 def lookup_dowel_bearing_strength(
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     specific_gravity_g: float,
     diameter_in: float,
     theta_deg: float = 0.0,
@@ -140,7 +193,7 @@ def calculate_group_action_factor_cg(
 
 def calculate_wood_bolt_connection(
     inputs: Dict[str, Any],
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     design_method: DesignMethod = DesignMethod.ASD,
     calculation_id: Optional[str] = None,
 ) -> CalculationResult:
@@ -332,6 +385,133 @@ def calculate_wood_bolt_connection(
     gov_ls = max(limit_states, key=lambda x: x.dcr)
     overall_status = CalculationStatus.PASS if all(ls.status == CalculationStatus.PASS for ls in limit_states) else CalculationStatus.FAIL
 
+    ref_proc = _build_nds_ref(
+        kb, "NDS", "2024", "procedure", "Wood Bolt Connection Procedure",
+        identifier="wood_bolt_connection_nds_workflow.md",
+        fallback_path="procedures/02_wood_design/wood_bolt_connection_nds_workflow.md",
+    )
+    ref_t11_3_1 = _build_nds_ref(kb, "NDS", "2024", "table", "Table 11.3.1", identifier=TABLE_11_3_1_FILE)
+    ref_t12_5_1a = _build_nds_ref(kb, "NDS", "2024", "table", "Table 12.5.1A", identifier=TABLE_12_5_1A_FILE)
+    ref_l_washers = _build_nds_ref(kb, "NDS", "2024", "table", "Tables L1, L7, L8", identifier=TABLE_L1_L7_L8_FILE)
+    ref_t12_3_3 = _build_nds_ref(
+        kb, "NDS", "2024", "table", "Table 12.3.3",
+        identifier=TABLE_12_3_3_FILE,
+        fallback_path=f"database/nds_wood/v2024/{TABLE_12_3_3_FILE}",
+    )
+    ref_t12_3_3a = _build_nds_ref(
+        kb, "NDS", "2024", "table", "Table 12.3.3A",
+        identifier=TABLE_12_3_3A_FILE,
+        fallback_path=f"database/nds_wood/v2024/{TABLE_12_3_3A_FILE}",
+    )
+
+    tear_out_cap = min(z_rt_prime_lbs, z_gt_prime_lbs)
+    dcr_tear = p_demand_lbs / tear_out_cap
+    dcr_net = p_demand_lbs / z_nt_prime_lbs
+
+    if method == DesignMethod.ASD:
+        yield_sym = r"P'_{yield} = N \cdot Z \cdot C_D \cdot C_M \cdot C_t \cdot C_g \cdot C_{\Delta}"
+        yield_sub = rf"{n_total} \cdot {z_ref_lbs:.0f} \cdot {c_d:.2f} \cdot {c_m:.2f} \cdot {c_t:.2f} \cdot {c_g:.2f} \cdot {c_delta:.2f} = {p_yield_cap_lbs:.1f} \text{{ lbs}}"
+    else:
+        yield_sym = r"P'_{yield} = N \cdot Z \cdot K_F \cdot \phi_z \cdot \lambda \cdot C_M \cdot C_t \cdot C_g \cdot C_{\Delta}"
+        yield_sub = rf"{n_total} \cdot {z_ref_lbs:.0f} \cdot 3.32 \cdot 0.65 \cdot {lam:.2f} \cdot {c_m:.2f} \cdot {c_t:.2f} \cdot {c_g:.2f} \cdot {c_delta:.2f} = {p_yield_cap_lbs:.1f} \text{{ lbs}}"
+
+    trace = (
+        CalcStep(
+            step_id="S1_END",
+            stage=LoadPathStage.STAGE_1_GEOMETRY_AND_LIMITS,
+            title="Minimum End Distance & Geometry Factor Check",
+            symbolic=r"e_{end,m} \geq a_{\min} = 0.5 \cdot a_{full}",
+            substituted=rf"{e_end_m_in:.2f} \text{{ in.}} \geq {a_min_in:.2f} \text{{ in. (}} C_{{\Delta}} = {c_delta:.2f}\text{{)}}",
+            variables={
+                "D": Quantity("D", d_in, "in.", "Bolt diameter"),
+                "e_end_m": Quantity("e_{end,m}", e_end_m_in, "in.", "Provided end distance"),
+                "a_min": Quantity("a_{\\min}", round(a_min_in, 2), "in.", "Minimum permitted end distance"),
+                "a_full": Quantity("a_{full}", round(a_full_in, 3), "in.", "Full-capacity end distance"),
+                "C_Delta": Quantity("C_{\\Delta}", c_delta, "", "Geometry factor"),
+            },
+            result_value=round(e_end_m_in, 2),
+            result_unit="in.",
+            acceptance=AcceptanceCriterion(">=", round(a_min_in, 2), "in.", "NDS Table 12.5.1A minimum end distance", is_dcr_check=True),
+            dcr=round(dcr_end, 3),
+            status=CalculationStatus.PASS if dcr_end <= 1.0 else CalculationStatus.FAIL,
+            refs=(ref_t12_5_1a, ref_proc),
+        ),
+        CalcStep(
+            step_id="S2_EYM",
+            stage=LoadPathStage.STAGE_2_PRIMARY_FORCE_TRANSFER,
+            title="Dowel Bearing Strength & Reference EYM Lateral Value",
+            symbolic=r"Z = \min\left(Z_{Im}, Z_{Is}, Z_{II}, Z_{IIIm}, Z_{IIIs}, Z_{IV}\right)" if not is_double_shear else r"Z = \min\left(Z_{Im}, Z_{Is}, Z_{IIIs}, Z_{IV}\right)",
+            substituted=rf"Z = {z_ref_lbs:.1f} \text{{ lbs (}}{gov_mode_name}\text{{, }} F_{{em}} = {f_em:.0f} \text{{ psi)}}",
+            variables={
+                "G_m": Quantity("G_m", g_m, "", "Main member specific gravity"),
+                "F_em": Quantity("F_{em}", f_em, "psi", "Main member dowel bearing strength"),
+                "F_es": Quantity("F_{es}", f_es, "psi", "Side member dowel bearing strength"),
+                "k1": Quantity("k_1", round(k1, 3), "", "EYM Mode II factor"),
+                "Z": Quantity("Z", round(z_ref_lbs, 1), "lbs", f"Reference lateral yield ({gov_mode_name})"),
+            },
+            result_value=round(z_ref_lbs, 1),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion("info", description=f"Governing European Yield Model mode: {gov_mode_name}", is_dcr_check=False),
+            dcr=None,
+            status=CalculationStatus.PASS,
+            refs=(RefSpec("NDS", "2024", "table", "Table 12.3.1A & Table 12.3.1B"), ref_t12_3_3, ref_t12_3_3a, ref_proc),
+        ),
+        CalcStep(
+            step_id="S2_YIELD",
+            stage=LoadPathStage.STAGE_2_PRIMARY_FORCE_TRANSFER,
+            title=f"Adjusted Group Lateral Yield ({gov_mode_name})",
+            symbolic=yield_sym,
+            substituted=yield_sub,
+            variables={
+                "C_g": Quantity("C_g", c_g, "", "Group action factor (Eq. 11.3-1)"),
+                "C_Delta": Quantity("C_{\\Delta}", c_delta, "", "Geometry factor"),
+                "P_demand": Quantity("P", round(p_demand_lbs, 1), "lbs", "Applied lateral demand"),
+                "P_yield_cap": Quantity("P'_{yield}", round(p_yield_cap_lbs, 1), "lbs", f"{method.value} adjusted bolt group yield capacity"),
+            },
+            result_value=round(p_yield_cap_lbs, 1),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion(">=", round(p_demand_lbs, 1), "lbs", f"{method.value} group lateral yield check", is_dcr_check=True),
+            dcr=round(dcr_yield, 3),
+            status=CalculationStatus.PASS if dcr_yield <= 1.0 else CalculationStatus.FAIL,
+            refs=(ref_t11_3_1, RefSpec("NDS", "2024", "equation", "Sec. 12.3.1 & Eq. 11.3-1"), ref_proc),
+        ),
+        CalcStep(
+            step_id="S3_TEAR",
+            stage=LoadPathStage.STAGE_3_CONNECTING_ELEMENT_AND_BASE_METAL,
+            title="Appendix E Row & Group Tear-Out Check",
+            symbolic=r"Z'_{RT} = \sum n_i \cdot F'_v \cdot t_m \cdot s_{crit}",
+            substituted=rf"{n_rows} \cdot {n_bolts_per_row} \cdot {f_v_prime_psi:.0f} \cdot {t_m_in:.2f} \cdot {s_crit_in:.2f} = {z_rt_prime_lbs:.1f} \text{{ lbs, }} \min(Z'_{{RT}}, Z'_{{GT}}) = {tear_out_cap:.1f} \text{{ lbs}}",
+            variables={
+                "Z_RT_prime": Quantity("Z'_{RT}", round(z_rt_prime_lbs, 1), "lbs", "Row tear-out capacity"),
+                "Z_GT_prime": Quantity("Z'_{GT}", round(z_gt_prime_lbs, 1), "lbs", "Group tear-out capacity"),
+                "P_demand": Quantity("P", round(p_demand_lbs, 1), "lbs", "Applied lateral demand"),
+            },
+            result_value=round(tear_out_cap, 1),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion(">=", round(p_demand_lbs, 1), "lbs", "NDS Appendix E brittle tear-out check", is_dcr_check=True),
+            dcr=round(dcr_tear, 3),
+            status=CalculationStatus.PASS if p_demand_lbs <= tear_out_cap else CalculationStatus.FAIL,
+            refs=(RefSpec("NDS", "2024", "equation", "App. E Eq. E.3-2 & E.4-1"), ref_l_washers, ref_proc),
+        ),
+        CalcStep(
+            step_id="S4_NET",
+            stage=LoadPathStage.STAGE_4_SUPPORTING_MEMBER_AND_GLOBAL,
+            title="Main Member Net Section Tension Capacity",
+            symbolic=r"Z'_{NT} = F'_t \cdot A_{net}",
+            substituted=rf"({f_t_prime_psi * lrfd_scale:.0f}) \cdot {a_net_in2:.2f} = {z_nt_prime_lbs:.1f} \text{{ lbs}}",
+            variables={
+                "A_net": Quantity("A_{net}", round(a_net_in2, 2), "in.^2", "Net cross-sectional area at bolt line"),
+                "Z_NT_prime": Quantity("Z'_{NT}", round(z_nt_prime_lbs, 1), "lbs", "Adjusted net section tension capacity"),
+            },
+            result_value=round(z_nt_prime_lbs, 1),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion(">=", round(p_demand_lbs, 1), "lbs", "NDS App. E Sec. E.2 net section tension check", is_dcr_check=True),
+            dcr=round(dcr_net, 3),
+            status=CalculationStatus.PASS if p_demand_lbs <= z_nt_prime_lbs else CalculationStatus.FAIL,
+            refs=(RefSpec("NDS", "2024", "section", "App. E Sec. E.2"), ref_proc),
+        ),
+    )
+
     return CalculationResult(
         calculation_id=calc_id,
         module_id="wood_bolt_lateral",
@@ -396,4 +576,5 @@ def calculate_wood_bolt_connection(
         warnings=[
             "Detailing Note: Bolt holes shall be bored D + 1/32 in. to D + 1/16 in. per NDS Sec. 12.1.3.2; install standard cut washers (Table L8) under bolt head and nut."
         ],
+        trace=trace,
     )

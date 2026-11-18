@@ -8,8 +8,8 @@ external pressure coefficients (GCp) as a function of Effective Wind Area A (ft^
 import math
 from typing import Dict, Tuple
 
-from app.services.knowledge_base_service import KnowledgeBaseService
 from core.common.validation import validate_non_negative, validate_positive
+from core.ports.reference_data_port import ReferenceDataPort
 
 
 TABLE_C30_3_1_FILE = "ASCE7-22_Table_C30.3-1.csv"
@@ -17,7 +17,7 @@ TABLE_C30_3_2_FILE = "ASCE7-22_Table_C30.3-2_C30.3-3.csv"
 
 
 def lookup_wall_gcp(
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     effective_area_ft2: float,
     zone: str = "Zone 4",
     roof_slope_deg: float = 0.0,
@@ -68,7 +68,7 @@ def lookup_wall_gcp(
 
 
 def lookup_roof_gcp(
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     effective_area_ft2: float,
     zone: str = "Zone 2",
     roof_slope_deg: float = 5.0,

@@ -2,15 +2,15 @@
 
 Conforms to SAD v1.0 Section 6.2 & Master Rules 2, 4, 5.
 Retrieves architectural component coefficients (C_AR, R_po, Omega_0p) from
-database/asce_7/v7_22/ASCE7-22_Table_13.5-1.csv via KnowledgeBaseService.
+database/asce_7/v7_22/ASCE7-22_Table_13.5-1.csv via ReferenceDataPort.
 """
 
 from dataclasses import dataclass
 import math
 from typing import Any, Dict, Optional
 
-from app.services.knowledge_base_service import KnowledgeBaseService
 from core.common.validation import validate_non_negative, validate_positive
+from core.ports.reference_data_port import ReferenceDataPort
 
 
 TABLE_13_5_1_FILE = "ASCE7-22_Table_13.5-1.csv"
@@ -29,7 +29,7 @@ class SeismicComponentCoefficients:
 
 
 def lookup_table_13_5_1(
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     element_keyword: str = "Appendages"
 ) -> SeismicComponentCoefficients:
     """Lookup architectural component seismic parameters from ASCE7-22_Table_13.5-1.csv."""
@@ -72,7 +72,7 @@ def lookup_table_13_5_1(
 
 
 def calculate_nonstructural_seismic_fp(
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     sds_g: float,
     wp_lbs: float,
     z_ft: float,

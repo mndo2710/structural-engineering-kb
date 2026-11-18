@@ -1,6 +1,6 @@
-# US Structural Engineering Knowledge Base & Calculation Architecture (`structural-engineering-kb`)
+# US Structural Engineering Knowledge Base & Standalone Desktop Application (`structural-engineering-kb`)
 
-Standardized US Structural Engineering Code Lookup Databases (`.csv`), Step-by-Step Plan Check Calculation Procedures (`.md`), and Automated Desktop Application Architecture (`core/`, `exporters/`, `gui/`, `tests/`) in US Customary Units (`in.`, `ft`, `lbs`, `kips`, `psi`, `ksi`, `psf`, `plf`, `lb-ft`, `kip-ft`) supporting parallel **ASD** and **LRFD** design philosophies.
+Deterministic Windows Desktop Structural Engineering Calculation Application (`PySide6` Frozen 4-Panel UI + Clean Architecture / Ports-and-Adapters Engine + SQLite Schema v2 Project Storage + `openpyxl` XLSX & `ReportLab` PDF Exporters + Google Drive Raw Sync) backed by 66 verified US Code Lookup Databases (`.csv`) and 26 Step-by-Step 7-Section Plan Check Calculation Procedures (`.md`) in US Customary Units (`in.`, `ft`, `lbs`, `kips`, `psi`, `ksi`, `psf`, `plf`, `lb-ft`, `kip-ft`) supporting parallel **ASD** and **LRFD** design philosophies.
 
 ---
 
@@ -14,100 +14,93 @@ Standardized US Structural Engineering Code Lookup Databases (`.csv`), Step-by-S
 
 ---
 
-## 2. Repository Directory Structure & 10-Day Completed Inventory
+## 2. Repository Directory Structure & Architecture Overview
 
 ```text
 structural-engineering-kb/
+├── proposal/
+│   └── Structural_Calculation_App_Consolidated_Architecture_Proposal.md  # Approved ACP & V1.0 Roadmap
 ├── config/
-│   ├── active_code_registry.json
-│   └── app_settings.json
-├── database/
+│   ├── active_code_registry.json       # Authoritative code editions (ASCE 7-22, NDS 2024, AISC 360-22, etc.)
+│   ├── app_settings.json               # Application configuration & exporter settings
+│   └── reference_manifest.json         # 92 SHA-256 verified reference checksums (66 CSVs + 26 MDs)
+├── database/                           # 66 Protected UTF-8-SIG CSV Code & Manufacturer Lookup Tables
 │   ├── asce_7/v7_22/
-│   │   ├── ASCE7-22_Table_2.3-1_2.4-1_Load_Combinations.csv
-│   │   ├── ASCE7-22_Table_13.5-1.csv
-│   │   ├── ASCE7-22_Section_12.11.2_Wall_Anchorage_and_Table_13.6-1_Equipment.csv
-│   │   ├── ASCE7-22_Table_26.6-1.csv
-│   │   ├── ASCE7-22_Table_26.9-1.csv
-│   │   ├── ASCE7-22_Table_26.10-1.csv
-│   │   ├── ASCE7-22_Table_26.13-1.csv
-│   │   ├── ASCE7-22_Figure_29.4-2.csv
-│   │   ├── ASCE7-22_Table_C30.3-1.csv
-│   │   ├── ASCE7-22_Table_C30.3-2_C30.3-3.csv
-│   │   └── ASCE7-22_Figure_30.11-1A_1B.csv
 │   ├── ibc_cbc/v2024_ibc_v2025_cbc/
-│   │   └── IBC-2024_Section_1607.9_Guardrail_Loads.csv
-│   ├── nds_wood/v2024/
-│   │   ├── NDS-2024_Table_11.3.1_Adjustment_Factors.csv
-│   │   ├── NDS-2024_Table_12.3.3_Dowel_Bearing_Strength_Fe.csv
-│   │   ├── NDS-2024_Table_12.5.1A_to_12.5.1G_Bolt_LagScrew_Geometry.csv
-│   │   ├── NDS-2024_Table_12E_Bolts_Single_Shear.csv
-│   │   ├── NDS-2024_Table_12J_12K_Lag_Screws.csv
-│   │   ├── NDS-2024_Table_12L_12M_Wood_Screws_and_Nails.csv
-│   │   ├── NDS-2024_Appendix_E_Group_Action_and_Tear_Out.csv
-│   │   ├── NDS-2024_Appendix_L1_L7_L8_Fastener_Dimensions_and_Washers.csv
-│   │   └── sdpws/
-│   │       ├── SDPWS-2021_Table_4.2A_Blocked_Diaphragms.csv
-│   │       ├── SDPWS-2021_Table_4.2C_Unblocked_Diaphragms.csv
-│   │       └── SDPWS-2021_Table_4.3A_Shear_Walls.csv
-│   ├── aisc_360/ch_j_connections/
-│   │   ├── AISC360-22_Table_J2.4.csv
-│   │   ├── AISC360-22_Table_J2.5_Welded_Joints.csv
-│   │   ├── AISC360-22_Table_J3.2_Bolt_Strength.csv
-│   │   ├── AISC360-22_Table_J3.3_J3.4_J3.5_Bolt_Holes_and_Edge_Distances.csv
-│   │   ├── AISC_DG1_Base_Plate_and_Anchor_Rod_Design.csv
-│   │   ├── AISC_Manual_16th_Part10_Shear_Tab_and_Single_Angle_Design.csv
-│   │   ├── AISC360-22_Table_K3.2_K4.2_HSS_Connections.csv
-│   │   └── AISC_Manual_16th_Part7_Eccentric_Bolt_C_Coefficients.csv
-│   ├── aci_318_tms_402/
-│   │   ├── aci_318_19/
-│   │   │   ├── ACI318-19_Ch17_Anchor_Limit_States_and_Factors.csv
-│   │   │   └── ASTM_F1554_and_Headed_Anchor_Bolt_Properties.csv
-│   │   └── tms_402_22/
-│   │       └── TMS402-22_Masonry_Anchor_Bolts_and_CMU_Properties.csv
+│   ├── nds_wood/v2024/ (incl. sdpws/)
+│   ├── aisc_360/v16th_ed/ch_j_connections/
+│   ├── aci_318_tms_402/ (aci_318_19/, tms_402_22/)
 │   └── manufacturer_catalogs/simpson_strong_tie/
-│       ├── Simpson_C-C-2026_Straps_CS_CMST_LSTA_MSTA_MSTC_MST.csv
-│       ├── Simpson_C-C-2026_Hurricane_Ties_and_Lateral_Plates_H_LTP_A35.csv
-│       ├── Simpson_C-C-2026_Holdowns_HDU_HDUE_DTT.csv
-│       ├── Simpson_C-C-2026_Joist_Hangers_LUS_HU_HUS_HUCQ_HGUS.csv
-│       ├── Simpson_C-C-2026_Post_Bases_and_Caps_ABU_ABA_CBSQ_MPBZ_CC_BC.csv
-│       └── Simpson_C-A-2023_Titen_HD_SET3G_PAB_Anchors.csv
-├── procedures/
+├── procedures/                         # 26 Protected 7-Section Plan Check Calculation Procedures (.md)
 │   ├── 01_loads_and_seismic/
-│   │   ├── cc_wind_parapet_workflow.md
-│   │   ├── cc_wind_overhang_workflow.md
-│   │   ├── cc_awning_canopy_loads_workflow.md
-│   │   ├── open_trellis_wind_seismic_workflow.md
-│   │   └── guardrail_handrail_loads_ibc_workflow.md
 │   ├── 02_wood_design/
-│   │   ├── wood_nail_screw_connection_nds_workflow.md
-│   │   ├── wood_lag_screw_sds_connection_nds_workflow.md
-│   │   ├── wood_bolted_connection_tearout_nds_workflow.md
-│   │   ├── wood_diaphragm_chord_collector_sdpws_workflow.md
-│   │   ├── wood_shear_wall_holdown_sdpws_workflow.md
-│   │   └── wood_joist_hanger_hurricane_tie_simpson_workflow.md
 │   ├── 03_steel_design/
-│   │   ├── steel_bolted_connection_aisc_workflow.md
-│   │   ├── steel_welded_connection_aisc_workflow.md
-│   │   ├── steel_column_base_plate_aisc_dg1_workflow.md
-│   │   ├── steel_shear_tab_connection_aisc_workflow.md
-│   │   ├── steel_single_double_angle_shear_aisc_workflow.md
-│   │   └── steel_hss_to_hss_moment_shear_aisc_workflow.md
 │   ├── 04_concrete_masonry_foundation/
-│   │   ├── concrete_anchorage_aci318_ch17_workflow.md
-│   │   ├── cmu_masonry_anchorage_out_of_plane_breakout_tms402_workflow.md
-│   │   └── cantilever_steel_post_embedded_concrete_cmu_workflow.md
 │   ├── 05_plan_check_responses/
-│   │   ├── standard_plan_check_responses.md
-│   │   └── plan_check_response_master_workflow_and_templates.md
 │   └── 06_components_and_cladding/
-│       ├── cc_parapet_subassembly_synthesis_workflow.md
-│       ├── cc_cantilever_tieback_awning_subassembly_workflow.md
-│       ├── cc_wood_steel_trellis_patio_subassembly_workflow.md
-│       └── cc_deck_guardrail_post_subassembly_workflow.md
-├── core/               # Python calculation engines (asce7, aisc360, nds, aci318)
-├── exporters/          # Standardized 17-column Arial 10pt openpyxl builder & Source_Audit logger
-├── gui/                # CustomTkinter desktop UI
-├── tests/              # Automated unit verification against benchmark workbooks
-├── main.py             # Application entry point
-└── state_summary.txt   # Rolling project state & Google Drive File ID registry
+├── core/                               # Deterministic Python Calculation Engine (zero GUI/service imports)
+│   ├── common/                         # units.py, load_combinations.py, calculation_result.py (CalcStep/RefSpec), math_markup.py
+│   ├── ports/                          # ReferenceDataPort protocol
+│   ├── asce7/                          # Wind velocity/C&C pressures, parapet, overhang, awning, trellis, guardrail, seismic
+│   ├── nds/                            # Bolts (incl. App. E tear-out), nails/screws/lag/SDS, shear walls, diaphragms, Simpson hangers/ties
+│   ├── aisc360/                        # Bolts, welds, shear tab (incl. HSS punching), angles, base plate, HSS-to-HSS moment/shear
+│   ├── aci318/                         # Ch. 17 cast-in & post-installed concrete anchors
+│   └── tms402/                         # CMU out-of-plane breakout & cantilevered embedded steel posts
+├── app/                                # Application Layer & Use-Case Orchestration
+│   ├── models/                         # Application DTOs, WorkspaceViewModel, DiagramSpec, SummaryViewModel
+│   ├── registry/                       # ModuleRegistry, ModuleSpec, FieldSpec (19 canonical / 22 verified catalog templates)
+│   ├── controllers/                    # Pure-Python WorkspaceController (load, edit, run, save_revision, stale tracking)
+│   ├── services/                       # ProjectService, CalculationService, KnowledgeBaseService, ReportService, HistoryService
+│   └── rendering/                      # Multi-target math renderers (KaTeX, RichText, ReportLab, openpyxl) & DiagramSpec builders
+├── gui/                                # Frozen PySide6 4-Panel Desktop UI (communicates strictly with app/)
+│   ├── main_window.py                  # Header bar (ASD|LRFD toggle), collapsible sidebar (232px / 48px rail), WorkspaceHost
+│   ├── dialogs/                        # 3-column AddCalculationDialog (21 visible catalog cards / 19 canonical IDs)
+│   ├── widgets/                        # 4-Panel Workspace (Panel 1 Inputs, Panel 2 Diagram, Panel 3 Calc Sheet, Panel 4 Summary)
+│   └── assets/                         # Locally vendored offline KaTeX runtime & SVG navigation icons
+├── storage/                            # Local Persistence & Backups
+│   ├── repositories/                   # SQLite ProjectRepository (Schema v2: projects, groups, ordered items, drafts, revisions)
+│   ├── migrations/                     # Transactional v1 -> v2 schema migrations
+│   └── backups/                        # Automatic pre-migration SQLite backups
+├── exporters/                          # Deterministic Engineering Deliverable Exporters
+│   ├── excel_builder.py                # 17-col (A:Q) Arial 10pt openpyxl builder (Calc_Sheet, Database, Source_Audit)
+│   ├── pdf_builder.py                  # 12-section ReportLab PDF builder around 7-section Plan Check layout
+│   └── audit_logger.py                 # SHA-256 reference provenance & revision audit logger
+├── cloud/                              # Google Drive OAuth 2.0 Raw File Synchronization & Offline Cache
+├── tests/                              # 5-Level pytest verification suite (Unit, Reference, Benchmark, Regression, E2E)
+├── AGENTS.md                           # Global Agent & Subagent Rules
+├── rules.md                            # Master Working Rules & Engineering Conventions
+├── proposed.md                         # Software Architecture Document (SAD v1.1)
+├── state_summary.txt                   # Rolling Project State & Google Drive File ID Registry
+├── context_guide.txt                   # Token-Optimized Context Loading Guide
+├── requirements.txt                    # Pinned Python dependencies (PySide6, numpy, pandas, openpyxl, reportlab, pytest)
+├── launch_app.bat                      # Windows launcher auto-detecting local venv / Python
+├── structural_app.spec                 # PyInstaller Windows standalone bundle specification
+└── main.py                             # Desktop application entry point
+```
+
+---
+
+## 3. Verified Calculation Modules (19 Canonical / 22 Catalog Templates)
+
+- **Loads (ASCE 7-22 / 2024 IBC):** `asce7_parapet_wind`, `asce7_roof_overhang`, `asce7_awning_canopy`, `asce7_trellis_loads`, `ibc_guardrail_loads`
+- **Wood (NDS 2024 / SDPWS 2021):** `wood_bolt_lateral`, `wood_fastener_nds` (plus preset templates `wood_nail_lateral`, `wood_screw_withdrawal`, `wood_combined_lateral_withdrawal`), `wood_shear_wall_sdpws`, `wood_diaphragm_sdpws`, `wood_simpson_hanger_tie`
+- **Steel (AISC 360-22 / Manual 16th Ed. / DG1):** `aisc_shear_tab`, `aisc_bolt_bearing`, `aisc_welded_connection`, `aisc_angle_connection`, `aisc_base_plate`, `aisc_hss_connection`
+- **Concrete & Masonry (ACI 318-19 / TMS 402-22):** `aci318_anchor_tension_shear`, `tms402_cmu_anchorage`, `tms402_embedded_post`
+
+---
+
+## 4. Development & Verification Quickstart (Windows PowerShell)
+
+```powershell
+# 1. Install dependencies in a clean Python 3.12+ virtual environment
+pip install -r requirements.txt
+
+# 2. Run the full automated verification suite (offscreen Qt + engine benchmarks)
+$env:QT_QPA_PLATFORM="offscreen"; pytest -v
+
+# 3. Launch the PySide6 Windows Desktop Application (or double-click launch_app.bat)
+python main.py
+
+# 4. Build standalone Windows bundle via PyInstaller
+pyinstaller structural_app.spec
 ```

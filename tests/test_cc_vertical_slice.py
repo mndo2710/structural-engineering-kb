@@ -191,7 +191,14 @@ class TestLevel3And4CCBenchmarkModules:
         assert len(res_par.limit_states) == 3
 
         res_oh = calculate_roof_overhang_wind(
-            {"V_mph": 115.0, "exposure": "C", "h_roof_ft": 20.0, "L_oh_ft": 2.5, "roof_slope_deg": 15.0},
+            {
+                "V_mph": 115.0,
+                "exposure": "C",
+                "h_roof_ft": 20.0,
+                "L_oh_ft": 2.5,
+                "roof_slope_deg": 15.0,
+                "R_tie_cap_asd_lbs": 1015.0,
+            },
             kb_service,
             DesignMethod.ASD,
         )
@@ -273,7 +280,7 @@ class TestLevel5EndToEndVerticalSlice:
             project_service=prj_service,
             report_service=report_service,
         )
-        for mod_id in calc_service.list_supported_modules():
+        for mod_id in cc_ws.MODULE_CONFIGS.keys():
             cc_ws.select_submodule(mod_id)
             assert cc_ws._current_result is not None
             assert cc_ws._current_result.module_id == mod_id

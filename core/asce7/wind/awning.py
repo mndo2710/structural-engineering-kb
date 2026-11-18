@@ -10,20 +10,30 @@ import math
 from typing import Any, Dict, List, Optional, Tuple
 import uuid
 
-from app.services.knowledge_base_service import KnowledgeBaseService
-from core.asce7.seismic.seismic_loads import calculate_nonstructural_seismic_fp
-from core.asce7.wind.velocity_pressure import calculate_velocity_pressure
+from core.asce7.seismic.seismic_loads import TABLE_13_5_1_FILE, calculate_nonstructural_seismic_fp
+from core.asce7.wind.velocity_pressure import (
+    TABLE_26_6_1_FILE,
+    TABLE_26_10_1_FILE,
+    _build_ref,
+    calculate_velocity_pressure,
+)
 from core.common.calculation_result import (
+    AcceptanceCriterion,
+    CalcStep,
     CalculationResult,
     CalculationStatus,
     DesignMethod,
     LimitStateResult,
+    LoadPathStage,
+    Quantity,
+    RefSpec,
 )
 from core.common.validation import (
     validate_design_method,
     validate_non_negative,
     validate_positive,
 )
+from core.ports.reference_data_port import ReferenceDataPort
 
 
 FIGURE_30_11_FILE = "ASCE7-22_Figure_30.11-1A_1B.csv"
@@ -54,7 +64,7 @@ def _eval_fig_30_11_log_curve(
 
 
 def lookup_canopy_net_gcp(
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     hc_over_he: float,
     effective_area_ft2: float,
 ) -> Tuple[float, float]:
@@ -63,7 +73,7 @@ def lookup_canopy_net_gcp(
     from ASCE7-22_Figure_30.11-1A_1B.csv for attached canopy framing.
     Matches the verification example in cc_awning_canopy_loads_workflow.md.
     """
-    # Ensure table is loaded via KnowledgeBaseService for integrity/manifest tracking
+    # Ensure table is loaded via ReferenceDataPort for integrity/manifest tracking
     _ = kb.get_table(FIGURE_30_11_FILE)
 
     rh = max(0.0, min(float(hc_over_he), 0.90))
@@ -117,7 +127,7 @@ def lookup_canopy_net_gcp(
 
 def calculate_awning_canopy_loads(
     inputs: Dict[str, Any],
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     design_method: DesignMethod = DesignMethod.ASD,
     calculation_id: Optional[str] = None,
 ) -> CalculationResult:
@@ -296,6 +306,158 @@ def calculate_awning_canopy_loads(
     gov_ls = max(limit_states, key=lambda x: x.dcr)
     overall_status = CalculationStatus.PASS if all(ls.status == CalculationStatus.PASS for ls in limit_states) else CalculationStatus.FAIL
 
+    ref_proc = _build_ref(
+        kb, "ASCE 7-22", "2022", "procedure", "Awning & Canopy Loads Procedure",
+        identifier="cc_awning_canopy_loads_workflow.md",
+        fallback_path="procedures/01_loads_and_seismic/cc_awning_canopy_loads_workflow.md",
+    )
+    ref_t26_6 = _build_ref(kb, "ASCE 7-22", "2022", "table", "Table 26.6-1", identifier=TABLE_26_6_1_FILE)
+    ref_t26_10 = _build_ref(kb, "ASCE 7-22", "2022", "table", "Table 26.10-1", identifier=TABLE_26_10_1_FILE)
+    ref_f30_11 = _build_ref(kb, "ASCE 7-22", "2022", "figure", "Fig. 30.11-1A / 1B", identifier=FIGURE_30_11_FILE)
+    ref_t13_5 = _build_ref(kb, "ASCE 7-22", "2022", "table", "Table 13.5-1", identifier=TABLE_13_5_1_FILE)
+    ref_combos = _build_ref(
+        kb, "ASCE 7-22", "2022", "table",
+        "Table 2.4-1" if method == DesignMethod.ASD else "Table 2.3-1",
+        identifier="ASCE7-22_Table_2.3-1_2.4-1_Load_Combinations.csv",
+    )
+
+    if support_type == "TieBack_Hanger":
+        s3_step = CalcStep(
+            step_id="S3_REACT",
+            stage=LoadPathStage.STAGE_3_CONNECTING_ELEMENT_AND_BASE_METAL,
+            title="Upper Tie-Back Eye-Bolt Horizontal Pullout",
+            symbolic=r"H_{upper} = \frac{q_{gov} \cdot B_c^2}{2 \cdot H_{rod}}",
+            substituted=rf"\frac{{{q_max_abs_plf:.1f} \cdot {bc_ft:.1f}^2}}{{2 \cdot {h_rod_ft:.1f}}} = {h_upper_lbs:.2f} \text{{ lbs}}",
+            variables={
+                "q_gov": Quantity("q_{gov}", round(q_max_abs_plf, 2), "plf", "Governing factored line load"),
+                "T_rod": Quantity("T_{rod}", round(t_rod_lbs, 2), "lbs", "Diagonal tie-rod axial tension"),
+                "H_cap": Quantity("H_{cap}", round(h_cap, 2), "lbs", f"{method.value} pullout capacity"),
+            },
+            result_value=round(h_upper_lbs, 2),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion("<=", round(h_cap, 2), "lbs", f"{method.value} tie-back horizontal capacity", is_dcr_check=True),
+            dcr=round(h_upper_lbs / h_cap, 3),
+            status=CalculationStatus.PASS if (h_upper_lbs / h_cap) <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("ASCE 7-22", "2022", "section", "Sec. 30.11 (Tie-Back Equilibrium)"), ref_combos, ref_proc),
+        )
+    else:
+        s3_step = CalcStep(
+            step_id="S3_REACT",
+            stage=LoadPathStage.STAGE_3_CONNECTING_ELEMENT_AND_BASE_METAL,
+            title="Canopy Cantilever Bracket Wall Moment",
+            symbolic=r"M_{wall} = 0.5 \cdot q_{gov} \cdot B_c^2",
+            substituted=rf"0.5 \cdot {q_max_abs_plf:.1f} \cdot {bc_ft:.1f}^2 = {m_gov_wall_lb_ft:.2f} \text{{ lb-ft}}",
+            variables={
+                "q_gov": Quantity("q_{gov}", round(q_max_abs_plf, 2), "plf", "Governing factored line load"),
+                "M_down": Quantity("M_{down}", round(m_down_wall_lb_ft, 2), "lb-ft", "Downward wall moment"),
+                "M_up": Quantity("M_{up}", round(m_up_wall_lb_ft, 2), "lb-ft", "Net uplift wall moment"),
+                "M_cap": Quantity("M_{cap}", round(m_cap, 2), "lb-ft", f"{method.value} bracket moment capacity"),
+            },
+            result_value=round(m_gov_wall_lb_ft, 2),
+            result_unit="lb-ft",
+            acceptance=AcceptanceCriterion("<=", round(m_cap, 2), "lb-ft", f"{method.value} bracket flexural capacity", is_dcr_check=True),
+            dcr=round(m_gov_wall_lb_ft / m_cap, 3),
+            status=CalculationStatus.PASS if (m_gov_wall_lb_ft / m_cap) <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("ASCE 7-22", "2022", "figure", "Sec. 30.11 & Fig. 30.11-1B"), ref_combos, ref_proc),
+        )
+
+    trace = (
+        CalcStep(
+            step_id="S1_GEO",
+            stage=LoadPathStage.STAGE_1_GEOMETRY_AND_LIMITS,
+            title="Canopy Height Ratio & Framing Effective Wind Area",
+            symbolic=r"r_h = \frac{h_c}{h_e} < 0.90",
+            substituted=rf"\frac{{{hc_ft:.2f}}}{{{he_ft:.2f}}} = {rh:.3f}",
+            variables={
+                "h_c": Quantity("h_c", hc_ft, "ft", "Canopy attachment height"),
+                "h_e": Quantity("h_e", he_ft, "ft", "Eave height of building wall"),
+                "r_h": Quantity("r_h", round(rh, 3), "ratio", "Height ratio"),
+                "A_frame": Quantity("A_{frame}", round(a_frame_ft2, 2), "ft^2", "Framing effective wind area"),
+            },
+            result_value=round(rh, 3),
+            result_unit="ratio",
+            acceptance=AcceptanceCriterion("<", 0.90, "ratio", "ASCE 7-22 Sec. 30.11 height ratio applicability limit", is_dcr_check=False),
+            dcr=None,
+            status=CalculationStatus.PASS if rh < 0.90 else CalculationStatus.REQUIRES_REVIEW,
+            refs=(RefSpec("ASCE 7-22", "2022", "section", "Sec. 30.11"), ref_proc),
+        ),
+        CalcStep(
+            step_id="S2_WIND",
+            stage=LoadPathStage.STAGE_2_PRIMARY_FORCE_TRANSFER,
+            title="Velocity Pressure & Net Canopy Wind Pressures",
+            symbolic=r"p_{net} = q_h \cdot K_d \cdot (GC_p)_{net}",
+            substituted=rf"{qh_psf:.2f} \cdot {kd:.2f} \cdot ({gcp_net_pos:+.2f}, {gcp_net_neg:+.2f}) = ({p_net_pos_psf:+.2f}, {p_net_neg_psf:+.2f}) \text{{ psf}}",
+            variables={
+                "q_h": Quantity("q_h", qh_psf, "psf", "Velocity pressure at roof height"),
+                "K_d": Quantity("K_d", kd, "", "Wind directionality factor"),
+                "GCp_net_pos": Quantity("(GC_p)_{net}^+", gcp_net_pos, "", "Positive net coefficient"),
+                "GCp_net_neg": Quantity("(GC_p)_{net}^-", gcp_net_neg, "", "Negative net coefficient"),
+                "p_net_pos": Quantity("p_{net}^+", p_net_pos_psf, "psf", "Downward wind pressure"),
+                "p_net_neg": Quantity("p_{net}^-", p_net_neg_psf, "psf", "Upward wind pressure"),
+            },
+            result_value=round(max(abs(p_net_pos_psf), abs(p_net_neg_psf)), 2),
+            result_unit="psf",
+            acceptance=AcceptanceCriterion("info", description="ASCE 7-22 Eq. 30.11-1 net canopy pressures", is_dcr_check=False),
+            dcr=None,
+            status=CalculationStatus.PASS,
+            refs=(RefSpec("ASCE 7-22", "2022", "equation", "Eq. 30.11-1"), ref_f30_11, ref_t26_10, ref_t26_6),
+        ),
+        CalcStep(
+            step_id="S2_SEIS",
+            stage=LoadPathStage.STAGE_2_PRIMARY_FORCE_TRANSFER,
+            title="Chapter 13 Nonstructural Seismic Force",
+            symbolic=r"F_p = \frac{0.4 \cdot S_{DS} \cdot I_p \cdot W_p \cdot H_f}{R_{\mu}} \cdot \left(\frac{C_{AR}}{R_{po}}\right)",
+            substituted=rf"\frac{{0.4 \cdot {sds_g:.2f} \cdot 1.0 \cdot {wp_bracket_lbs:.1f} \cdot {seismic_res['H_f']:.2f}}}{{{seismic_res['R_mu']:.2f}}} \cdot \frac{{{seismic_res['C_AR']:.2f}}}{{{seismic_res['R_po']:.2f}}} = {fp_lbs:.2f} \text{{ lbs}}",
+            variables={
+                "W_p": Quantity("W_p", round(wp_bracket_lbs, 2), "lbs", "Tributary canopy dead weight"),
+                "C_AR": Quantity("C_{AR}", seismic_res["C_AR"], "", "Component resonance factor"),
+                "R_po": Quantity("R_{po}", seismic_res["R_po"], "", "Component strength factor"),
+                "F_p": Quantity("F_p", fp_lbs, "lbs", "Governing horizontal seismic force"),
+            },
+            result_value=fp_lbs,
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion("info", description="ASCE 7-22 Eqs. 13.3-1 through 13.3-6", is_dcr_check=False),
+            dcr=None,
+            status=CalculationStatus.PASS,
+            refs=(RefSpec("ASCE 7-22", "2022", "equation", "Eq. 13.3-1"), ref_t13_5, ref_proc),
+        ),
+        s3_step,
+        CalcStep(
+            step_id="S4_V",
+            stage=LoadPathStage.STAGE_4_SUPPORTING_MEMBER_AND_GLOBAL,
+            title="Canopy Wall Connection Vertical Shear",
+            symbolic=r"V_{wall} = q_{down,gov} \cdot B_c",
+            substituted=rf"{q_down_gov_plf:.1f} \cdot {bc_ft:.1f} = {v_down_wall_lbs:.2f} \text{{ lbs}}",
+            variables={
+                "q_down": Quantity("q_{down,gov}", round(q_down_gov_plf, 2), "plf", "Governing downward line load"),
+                "V_cap": Quantity("V_{cap}", round(v_cap, 2), "lbs", f"{method.value} vertical shear capacity"),
+            },
+            result_value=round(v_down_wall_lbs, 2),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion("<=", round(v_cap, 2), "lbs", f"{method.value} wall shear capacity", is_dcr_check=True),
+            dcr=round(dcr_v, 3),
+            status=CalculationStatus.PASS if dcr_v <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("ASCE 7-22", "2022", "section", "Sec. 30.11"), ref_combos, ref_proc),
+        ),
+        CalcStep(
+            step_id="S4_SEIS",
+            stage=LoadPathStage.STAGE_4_SUPPORTING_MEMBER_AND_GLOBAL,
+            title="Nonstructural Seismic Horizontal Wall Anchorage",
+            symbolic=r"H_{seis} = f_E \cdot F_p",
+            substituted=rf"{(0.7 if method == DesignMethod.ASD else 1.0):.1f} \cdot {fp_lbs:.1f} = {f_seismic_horiz:.2f} \text{{ lbs}}",
+            variables={
+                "f_E": Quantity("f_E", 0.7 if method == DesignMethod.ASD else 1.0, "", f"{method.value} seismic load factor"),
+                "H_cap": Quantity("H_{cap}", round(h_cap, 2), "lbs", f"{method.value} horizontal anchorage capacity"),
+            },
+            result_value=round(f_seismic_horiz, 2),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion("<=", round(h_cap, 2), "lbs", f"{method.value} horizontal wall anchorage capacity", is_dcr_check=True),
+            dcr=round(dcr_seis, 3),
+            status=CalculationStatus.PASS if dcr_seis <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("ASCE 7-22", "2022", "equation", "Eq. 13.3-1"), ref_t13_5, ref_proc),
+        ),
+    )
+
     warnings = []
     if rh >= 0.90:
         warnings.append(
@@ -363,4 +525,5 @@ def calculate_awning_canopy_loads(
             "procedures/01_loads_and_seismic/cc_awning_canopy_loads_workflow.md",
         ],
         warnings=warnings,
+        trace=trace,
     )

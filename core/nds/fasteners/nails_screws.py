@@ -10,19 +10,29 @@ import math
 from typing import Any, Dict, List, Optional
 import uuid
 
-from app.services.knowledge_base_service import KnowledgeBaseService
 from core.common.calculation_result import (
+    AcceptanceCriterion,
+    CalcStep,
     CalculationResult,
     CalculationStatus,
     DesignMethod,
     LimitStateResult,
+    LoadPathStage,
+    Quantity,
+    RefSpec,
 )
 from core.common.validation import (
     validate_design_method,
     validate_non_negative,
     validate_positive,
 )
-from core.nds.fasteners.bolts import lookup_dowel_bearing_strength, lookup_species_specific_gravity
+from core.nds.fasteners.bolts import (
+    TABLE_11_3_1_FILE,
+    _build_nds_ref,
+    lookup_dowel_bearing_strength,
+    lookup_species_specific_gravity,
+)
+from core.ports.reference_data_port import ReferenceDataPort
 
 
 TABLE_L2_L3_L4_FILE = "NDS-2024_Table_L2_L3_L4_I1.csv"
@@ -33,7 +43,7 @@ ESR_2236_SDS_FILE = "ICC-ESR-2236_Table_1_2_3_4_5.csv"
 
 
 def lookup_sds_screw_properties(
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     model_or_length: str = "SDS25212",
 ) -> Dict[str, Any]:
     """Lookup Simpson Strong-Drive SDS 1/4-in. screw properties from ICC-ESR-2236_Table_1_2_3_4_5.csv."""
@@ -89,7 +99,7 @@ def lookup_sds_screw_properties(
 
 def calculate_wood_fastener_connection(
     inputs: Dict[str, Any],
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     design_method: DesignMethod = DesignMethod.ASD,
     calculation_id: Optional[str] = None,
 ) -> CalculationResult:
@@ -114,9 +124,11 @@ def calculate_wood_fastener_connection(
     is_toe_nail = bool(inputs.get("is_toe_nail", False))
     is_end_grain = bool(inputs.get("is_end_grain", False))
 
+    has_v_input = "V_demand_lbs" in inputs and inputs["V_demand_lbs"] is not None
+    has_t_input = "T_demand_lbs" in inputs and inputs["T_demand_lbs"] is not None
     v_demand_lbs = validate_non_negative("V_demand_lbs", inputs.get("V_demand_lbs", 550.0))
     t_demand_lbs = validate_non_negative("T_demand_lbs", inputs.get("T_demand_lbs", 320.0))
-    if v_demand_lbs == 0.0 and t_demand_lbs == 0.0:
+    if not has_v_input and not has_t_input and v_demand_lbs == 0.0 and t_demand_lbs == 0.0:
         v_demand_lbs = 100.0
 
     # Ensure reference tables are loaded via KB
@@ -267,6 +279,137 @@ def calculate_wood_fastener_connection(
     gov_ls = max(limit_states, key=lambda x: x.dcr)
     overall_status = CalculationStatus.PASS if all(ls.status == CalculationStatus.PASS for ls in limit_states) else CalculationStatus.FAIL
 
+    ref_proc_lag = _build_nds_ref(
+        kb, "NDS", "2024", "procedure", "Wood Lag Screw Procedure",
+        identifier="wood_lag_screw_nds_workflow.md",
+        fallback_path="procedures/02_wood_design/wood_lag_screw_nds_workflow.md",
+    )
+    ref_proc_nail = _build_nds_ref(
+        kb, "NDS", "2024", "procedure", "Wood Nail & Screw Fastener Procedure",
+        identifier="wood_nail_screw_fastener_nds_workflow.md",
+        fallback_path="procedures/02_wood_design/wood_nail_screw_fastener_nds_workflow.md",
+    )
+    ref_proc = ref_proc_lag if "lag" in f_type_lower else ref_proc_nail
+    ref_t11_3_1 = _build_nds_ref(kb, "NDS", "2024", "table", "Table 11.3.1", identifier=TABLE_11_3_1_FILE)
+    ref_tl = _build_nds_ref(kb, "NDS", "2024", "table", "Tables L2, L3, L4, I1", identifier=TABLE_L2_L3_L4_FILE)
+    ref_t12_2a = _build_nds_ref(kb, "NDS", "2024", "table", "Table 12.2A", identifier=TABLE_12_2A_FILE)
+    ref_t12_2b = _build_nds_ref(
+        kb, "NDS", "2024", "table", "Table 12.2B",
+        identifier=TABLE_12_2B_FILE,
+        fallback_path=f"database/nds_wood/v2024/{TABLE_12_2B_FILE}",
+    )
+    ref_t12_2c = _build_nds_ref(
+        kb, "NDS", "2024", "table", "Table 12.2C",
+        identifier=TABLE_12_2C_FILE,
+        fallback_path=f"database/nds_wood/v2024/{TABLE_12_2C_FILE}",
+    )
+    ref_esr = _build_nds_ref(kb, "ICC-ESR", "2236", "catalog", "ESR-2236 Tables 1-5", identifier=ESR_2236_SDS_FILE)
+
+    lat_refs = (ref_t11_3_1, ref_esr, ref_proc) if "sds" in f_type_lower else (ref_t11_3_1, ref_tl, ref_proc)
+
+    if method == DesignMethod.ASD:
+        lat_sym = r"V_{cap} = N \cdot Z \cdot C_D \cdot C_M \cdot C_t \cdot C_d \cdot C_{eg} \cdot C_{tn}"
+        with_sym = r"T_{cap} = N \cdot (W \cdot p_t) \cdot C_D \cdot C_M \cdot C_t \cdot C_{eg} \cdot C_{tn}"
+    else:
+        lat_sym = r"V_{cap} = N \cdot Z \cdot K_F \cdot \phi_z \cdot \lambda \cdot C_M \cdot C_t \cdot C_d \cdot C_{eg} \cdot C_{tn}"
+        with_sym = r"T_{cap} = N \cdot (W \cdot p_t) \cdot K_F \cdot \phi_z \cdot \lambda \cdot C_M \cdot C_t \cdot C_{eg} \cdot C_{tn}"
+
+    trace = (
+        CalcStep(
+            step_id="S1_PEN",
+            stage=LoadPathStage.STAGE_1_GEOMETRY_AND_LIMITS,
+            title="Main Member Penetration & Depth Factor C_d",
+            symbolic=r"C_d = \min\left(1.0, \frac{p}{p_{full}}\right)",
+            substituted=rf"p = {p_in:.2f} \text{{ in., }} p_t = {p_t_in:.2f} \text{{ in., }} C_d = {c_pen:.3f}",
+            variables={
+                "D": Quantity("D", d_in, "in.", "Fastener diameter"),
+                "L": Quantity("L", length_in, "in.", "Fastener length"),
+                "p": Quantity("p", round(p_in, 2), "in.", "Lateral penetration in main member"),
+                "p_t": Quantity("p_t", round(p_t_in, 2), "in.", "Threaded/effective withdrawal penetration"),
+                "C_d": Quantity("C_d", round(c_pen, 3), "", "Penetration depth factor"),
+            },
+            result_value=round(c_pen, 3),
+            result_unit="ratio",
+            acceptance=AcceptanceCriterion(">", 0.0, "", "NDS Sec. 12.3.4 minimum penetration check", is_dcr_check=False),
+            dcr=None,
+            status=CalculationStatus.PASS if c_pen > 0.0 else CalculationStatus.FAIL,
+            refs=(ref_tl, ref_proc),
+        ),
+        CalcStep(
+            step_id="S2_LAT",
+            stage=LoadPathStage.STAGE_2_PRIMARY_FORCE_TRANSFER,
+            title=f"{fastener_type} Group Lateral Shear Capacity",
+            symbolic=lat_sym,
+            substituted=rf"{n_fasteners} \cdot {z_ref_lbs:.1f} \cdot {factor_method:.2f} \cdot {c_pen:.2f} = {v_cap_group_lbs:.1f} \text{{ lbs}}",
+            variables={
+                "Z_ref": Quantity("Z", round(z_ref_lbs, 1), "lbs", "Reference single-fastener lateral value"),
+                "Z_prime": Quantity("Z'", round(z_prime_single, 1), "lbs", "Adjusted single-fastener lateral value"),
+                "V_demand": Quantity("V", round(v_demand_lbs, 1), "lbs", "Applied group shear demand"),
+                "V_cap": Quantity("V_{cap}", round(v_cap_group_lbs, 1), "lbs", f"{method.value} group lateral shear capacity"),
+            },
+            result_value=round(v_cap_group_lbs, 1),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion(">=", round(v_demand_lbs, 1), "lbs", f"{method.value} group lateral shear check", is_dcr_check=True),
+            dcr=round(dcr_lat, 3),
+            status=CalculationStatus.PASS if dcr_lat <= 1.0 else CalculationStatus.FAIL,
+            refs=lat_refs,
+        ),
+        CalcStep(
+            step_id="S2_WITH",
+            stage=LoadPathStage.STAGE_2_PRIMARY_FORCE_TRANSFER,
+            title=f"{fastener_type} Group Axial Withdrawal Capacity",
+            symbolic=with_sym,
+            substituted=rf"{n_fasteners} \cdot ({w_unit_lbf_in:.1f} \cdot {p_t_in:.2f}) \cdot {factor_method:.2f} = {t_cap_group_lbs:.1f} \text{{ lbs}}",
+            variables={
+                "W": Quantity("W", round(w_unit_lbf_in, 1), "lbf/in.", "Unit withdrawal value"),
+                "W_prime": Quantity("W'", round(w_prime_single, 1), "lbs", "Adjusted single-fastener withdrawal"),
+                "T_demand": Quantity("T", round(t_demand_lbs, 1), "lbs", "Applied group withdrawal demand"),
+                "T_cap": Quantity("T_{cap}", round(t_cap_group_lbs, 1), "lbs", f"{method.value} group withdrawal capacity"),
+            },
+            result_value=round(t_cap_group_lbs, 1),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion(">=", round(t_demand_lbs, 1), "lbs", f"{method.value} group withdrawal check", is_dcr_check=True),
+            dcr=round(dcr_with, 3),
+            status=CalculationStatus.PASS if dcr_with <= 1.0 else CalculationStatus.FAIL,
+            refs=(ref_t12_2a, ref_t12_2b, ref_t12_2c, ref_proc),
+        ),
+        CalcStep(
+            step_id="S3_INTER",
+            stage=LoadPathStage.STAGE_3_CONNECTING_ELEMENT_AND_BASE_METAL,
+            title="Combined Lateral + Withdrawal Capacity (Z_alpha')",
+            symbolic=eq_inter,
+            substituted=rf"Z'_{{\alpha}} = {z_alpha_single:.1f} \text{{ lbs, }} N \cdot Z'_{{\alpha}} = {r_cap_group_lbs:.1f} \text{{ lbs at }} \alpha = {alpha_deg:.1f}^\circ",
+            variables={
+                "alpha": Quantity(r"\alpha", round(alpha_deg, 1), "deg", "Resultant load angle from shear plane"),
+                "Z_alpha": Quantity(r"Z'_{\alpha}", round(z_alpha_single, 1), "lbs", "Single-fastener combined capacity"),
+                "R_cap": Quantity("R_{cap}", round(r_cap_group_lbs, 1), "lbs", "Group combined interaction capacity"),
+            },
+            result_value=round(r_cap_group_lbs, 1),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion(">=", round(r_demand_group_lbs, 1), "lbs", "NDS Sec. 12.4 interaction capacity", is_dcr_check=True),
+            dcr=round(dcr_comb, 3),
+            status=CalculationStatus.PASS if dcr_comb <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("NDS", "2024", "section", "Sec. 12.4.1 / 12.4.2"), ref_proc),
+        ),
+        CalcStep(
+            step_id="S4_GOV",
+            stage=LoadPathStage.STAGE_4_SUPPORTING_MEMBER_AND_GLOBAL,
+            title="Fastener Group Resultant Interaction Demand Check",
+            symbolic=r"R = \sqrt{V^2 + T^2} \leq N \cdot Z'_{\alpha}",
+            substituted=rf"\sqrt{{{v_demand_lbs:.1f}^2 + {t_demand_lbs:.1f}^2}} = {r_demand_group_lbs:.1f} \text{{ lbs}} \leq {r_cap_group_lbs:.1f} \text{{ lbs}}",
+            variables={
+                "R_demand": Quantity("R", round(r_demand_group_lbs, 1), "lbs", "Resultant demand vector"),
+                "R_cap": Quantity("R_{cap}", round(r_cap_group_lbs, 1), "lbs", "Group combined capacity"),
+            },
+            result_value=round(r_demand_group_lbs, 1),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion("<=", round(r_cap_group_lbs, 1), "lbs", "Resultant combined load interaction check", is_dcr_check=True),
+            dcr=round(dcr_comb, 3),
+            status=CalculationStatus.PASS if dcr_comb <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("NDS", "2024", "section", "Sec. 12.4"), ref_t11_3_1, ref_proc),
+        ),
+    )
+
     return CalculationResult(
         calculation_id=calc_id,
         module_id="wood_fastener_nds",
@@ -319,4 +462,5 @@ def calculate_wood_fastener_connection(
         warnings=[
             "Detailing Note: Nails and wood screws shall never be loaded in withdrawal from end grain per NDS Sec. 12.2.2.2 & 12.2.3.2."
         ],
+        trace=trace,
     )

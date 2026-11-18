@@ -14,6 +14,13 @@ env/
 ~$*.docx
 .DS_Store
 Thumbs.db
+desktop.ini
+*.desktop.ini
+
+# PyInstaller & build
+dist/
+build/
+*.manifest
 
 # Google Drive cloud shortcut/virtual files (cannot be read by Git on Windows)
 *.gdoc
@@ -25,3 +32,9 @@ Thumbs.db
 # Runtime logs & temporary database journals
 logs/*.log
 *.sqlite3-journal
+
+# Runtime storage backups and exports
+storage/backups/*.sqlite3
+storage/exports/*
+!storage/exports/.gitkeep
+!storage/backups/.gitkeep

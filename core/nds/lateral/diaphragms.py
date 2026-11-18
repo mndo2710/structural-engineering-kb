@@ -10,18 +10,24 @@ chord tension splice, and collector/drag-strut strap selection.
 from typing import Any, Dict, List, Optional
 import uuid
 
-from app.services.knowledge_base_service import KnowledgeBaseService
 from core.common.calculation_result import (
+    AcceptanceCriterion,
+    CalcStep,
     CalculationResult,
     CalculationStatus,
     DesignMethod,
     LimitStateResult,
+    LoadPathStage,
+    Quantity,
+    RefSpec,
 )
 from core.common.validation import (
     validate_design_method,
     validate_non_negative,
     validate_positive,
 )
+from core.nds.fasteners.bolts import _build_nds_ref
+from core.ports.reference_data_port import ReferenceDataPort
 
 
 SDPWS_4_2A_FILE = "SDPWS-2021_Table_4.2A_Blocked_Diaphragms.csv"
@@ -30,7 +36,7 @@ SIMPSON_STRAPS_FILE = "Simpson_C-C-2026_Straps_CS_CMST_LSTA_MSTA_MSTC_MST.csv"
 
 
 def lookup_blocked_diaphragm_table_4_2a(
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     sheathing_grade: str = "Sheathing and Single-Floor",
     nail_size: str = "10d",
     panel_thickness: str = "15/32",
@@ -78,7 +84,7 @@ def lookup_blocked_diaphragm_table_4_2a(
 
 
 def lookup_simpson_strap(
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     model_prefix: str = "MSTC66",
     species_group: str = "DF/SP",
 ) -> Dict[str, Any]:
@@ -101,7 +107,7 @@ def lookup_simpson_strap(
 
 def calculate_wood_diaphragm(
     inputs: Dict[str, Any],
-    kb: KnowledgeBaseService,
+    kb: ReferenceDataPort,
     design_method: DesignMethod = DesignMethod.ASD,
     calculation_id: Optional[str] = None,
 ) -> CalculationResult:
@@ -224,6 +230,90 @@ def calculate_wood_diaphragm(
     gov_ls = max(limit_states, key=lambda x: x.dcr)
     overall_status = CalculationStatus.PASS if all(ls.status == CalculationStatus.PASS for ls in limit_states) else CalculationStatus.FAIL
 
+    ref_proc = _build_nds_ref(
+        kb, "SDPWS", "2021", "procedure", "Wood Diaphragm, Chord & Collector Procedure",
+        identifier="wood_diaphragm_chord_collector_sdpws_workflow.md",
+        fallback_path="procedures/02_wood_design/wood_diaphragm_chord_collector_sdpws_workflow.md",
+    )
+    ref_t42a = _build_nds_ref(kb, "SDPWS", "2021", "table", "Table 4.2A", identifier=SDPWS_4_2A_FILE)
+    ref_strap = _build_nds_ref(kb, "Simpson", "2026", "catalog", "Straps CS / CMST / LSTA / MSTA / MSTC / MST", identifier=SIMPSON_STRAPS_FILE)
+
+    trace = (
+        CalcStep(
+            step_id="S1_AR",
+            stage=LoadPathStage.STAGE_1_GEOMETRY_AND_LIMITS,
+            title="Blocked Diaphragm Aspect Ratio Limit",
+            symbolic=r"\frac{L}{W} \leq 4.0",
+            substituted=rf"\frac{{{l_span_ft:.1f}}}{{{w_depth_ft:.1f}}} = {aspect_ratio:.2f} \leq 4.00",
+            variables={
+                "L": Quantity("L", l_span_ft, "ft", "Diaphragm span between shear walls"),
+                "W": Quantity("W", w_depth_ft, "ft", "Diaphragm depth parallel to load"),
+                "C_sp": Quantity("C_{sp}", round(c_sp, 2), "", "Specific gravity factor"),
+            },
+            result_value=round(aspect_ratio, 2),
+            result_unit="ratio",
+            acceptance=AcceptanceCriterion("<=", 4.00, "ratio", "SDPWS Table 4.2.4 max blocked diaphragm aspect ratio", is_dcr_check=True),
+            dcr=round(dcr_ar, 3),
+            status=CalculationStatus.PASS if dcr_ar <= 1.0 else CalculationStatus.FAIL,
+            refs=(RefSpec("SDPWS", "2021", "table", "Table 4.2.4"), ref_proc),
+        ),
+        CalcStep(
+            step_id="S2_SHEAR",
+            stage=LoadPathStage.STAGE_2_PRIMARY_FORCE_TRANSFER,
+            title="Blocked Diaphragm Boundary Unit Shear",
+            symbolic=r"v = \frac{w \cdot L}{2 \cdot W} \leq v_{allow}",
+            substituted=rf"\frac{{{w_load_plf:.1f} \cdot {l_span_ft:.1f}}}{{2 \cdot {w_depth_ft:.1f}}} = {v_unit_demand_plf:.1f} \text{{ plf}} \leq {v_unit_cap_plf:.1f} \text{{ plf}}",
+            variables={
+                "v_s": Quantity("v_s", v_s_nom_plf, "plf", "Nominal unit shear capacity"),
+                "G_a": Quantity("G_a", g_a, "kips/in.", "Apparent diaphragm shear stiffness"),
+                "v_demand": Quantity("v", round(v_unit_demand_plf, 1), "plf", "Boundary unit shear demand"),
+                "v_cap": Quantity("v_{allow}", round(v_unit_cap_plf, 1), "plf", f"{method.value} unit shear capacity"),
+            },
+            result_value=round(v_unit_demand_plf, 1),
+            result_unit="plf",
+            acceptance=AcceptanceCriterion("<=", round(v_unit_cap_plf, 1), "plf", f"{method.value} diaphragm unit shear capacity", is_dcr_check=True),
+            dcr=round(dcr_shear, 3),
+            status=CalculationStatus.PASS if dcr_shear <= 1.0 else CalculationStatus.FAIL,
+            refs=(ref_t42a, RefSpec("SDPWS", "2021", "section", "Sec. 4.2.3"), ref_proc),
+        ),
+        CalcStep(
+            step_id="S3_CHORD",
+            stage=LoadPathStage.STAGE_3_CONNECTING_ELEMENT_AND_BASE_METAL,
+            title="Diaphragm Chord Tension & 3-Term Midspan Deflection",
+            symbolic=r"T_{chord} = \frac{w \cdot L^2}{8 \cdot W}",
+            substituted=rf"\frac{{{w_load_plf:.1f} \cdot {l_span_ft:.1f}^2}}{{8 \cdot {w_depth_ft:.1f}}} = {t_chord_max_lbs:.1f} \text{{ lbs (}} \delta_{{dia}} = {delta_dia_asd_in:.3f} \text{{ in.)}}",
+            variables={
+                "M_max": Quantity("M_{\\max}", round(m_max_lb_ft, 1), "lb-ft", "Maximum in-plane diaphragm moment"),
+                "T_chord": Quantity("T_{chord}", round(t_chord_max_lbs, 1), "lbs", "Peak diaphragm chord force"),
+                "T_quarter": Quantity("T_{0.25L}", round(t_chord_quarter_lbs, 1), "lbs", "Quarter-span chord force"),
+                "delta_dia": Quantity(r"\delta_{dia}", round(delta_dia_asd_in, 3), "in.", "3-term ASD midspan deflection"),
+            },
+            result_value=round(t_chord_max_lbs, 1),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion("info", description="SDPWS Eq. 4.2-1 chord force & 3-term diaphragm deflection", is_dcr_check=False),
+            dcr=None,
+            status=CalculationStatus.PASS,
+            refs=(RefSpec("SDPWS", "2021", "equation", "Eq. 4.2-1 & Sec. 4.2.6"), ref_proc),
+        ),
+        CalcStep(
+            step_id="S4_DRAG",
+            stage=LoadPathStage.STAGE_4_SUPPORTING_MEMBER_AND_GLOBAL,
+            title=f"Collector / Drag Strut Strap ({strap_info['model']})",
+            symbolic=r"F_{drag} = v \cdot L_{unsupported} \leq T_{allow,strap}",
+            substituted=rf"{v_unit_demand_plf:.1f} \cdot {unsupported_drag_ft:.1f} = {f_drag_lbs:.1f} \text{{ lbs}} \leq {t_strap_cap_lbs:.1f} \text{{ lbs}}",
+            variables={
+                "L_unsup": Quantity("L_{unsupported}", unsupported_drag_ft, "ft", "Unsupported collector length"),
+                "T_strap_cap": Quantity("T_{allow,strap}", round(t_strap_cap_lbs, 1), "lbs", f"{method.value} strap tension capacity"),
+            },
+            result_value=round(f_drag_lbs, 1),
+            result_unit="lbs",
+            acceptance=AcceptanceCriterion("<=", round(t_strap_cap_lbs, 1), "lbs", f"{method.value} collector strap capacity", is_dcr_check=True),
+            dcr=round(dcr_drag, 3),
+            status=CalculationStatus.PASS if dcr_drag <= 1.0 else CalculationStatus.FAIL,
+            refs=(ref_strap, RefSpec("ASCE 7-22", "2022", "section", "Sec. 12.10"), ref_proc),
+        ),
+    )
+
     return CalculationResult(
         calculation_id=calc_id,
         module_id="wood_diaphragm_sdpws",
@@ -275,4 +365,5 @@ def calculate_wood_diaphragm(
         warnings=[
             "SDPWS Table 4.2A Footnote 3: Minimum 3x (2.5\" actual) framing is mandatory at adjoining panel edges and boundaries whenever 10d common nails are spaced at <= 2.5\" o.c."
         ],
+        trace=trace,
     )

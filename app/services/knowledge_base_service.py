@@ -102,24 +102,49 @@ class KnowledgeBaseService:
         except ReferenceDataNotFoundError:
             pass
 
-        # Fallback: check if direct path under root_dir exists
-        direct = self.root_dir / identifier
-        if direct.exists():
-            return direct
+        # Fallback: check direct paths under root_dir, database_dir, or procedures_dir
+        for base_dir in (self.root_dir, self.database_dir, self.procedures_dir):
+            direct = base_dir / identifier
+            if direct.is_file():
+                return direct
 
-        # Fallback: search in database/ or procedures/
-        for candidate in self.database_dir.rglob(identifier):
-            if candidate.is_file():
+        # Fallback: search by filename in database/ or procedures/
+        leaf_name = Path(identifier).name
+        for candidate in self.database_dir.rglob(leaf_name):
+            if candidate.is_file() and candidate.as_posix().endswith(identifier.replace("\\", "/")):
                 return candidate
-        for candidate in self.procedures_dir.rglob(identifier):
-            if candidate.is_file():
+        for candidate in self.procedures_dir.rglob(leaf_name):
+            if candidate.is_file() and candidate.as_posix().endswith(identifier.replace("\\", "/")):
                 return candidate
 
         raise ReferenceDataNotFoundError(f"Reference file not found on disk: '{identifier}'")
 
+    def get_table_raw_rows(self, identifier: str) -> List[List[str]]:
+        """Read all non-empty raw CSV rows using utf-8-sig encoding."""
+        file_path = self.get_file_path(identifier)
+        try:
+            with open(file_path, mode="r", encoding="utf-8-sig", newline="") as f:
+                return [row for row in csv.reader(f) if any(str(cell).strip() != "" for cell in row)]
+        except Exception as e:
+            raise ReferenceIntegrityError(f"Failed to read raw CSV rows '{file_path}': {e}") from e
+
+    @staticmethod
+    def _make_unique_headers(raw_headers: List[str], max_cols: int) -> List[str]:
+        seen: Dict[str, int] = {}
+        headers: List[str] = []
+        for idx in range(max_cols):
+            base = str(raw_headers[idx]).strip() if idx < len(raw_headers) else ""
+            if not base:
+                base = f"Column_{idx + 1}"
+            count = seen.get(base, 0) + 1
+            seen[base] = count
+            headers.append(base if count == 1 else f"{base}_{count}")
+        return headers
+
     def get_table(self, identifier: str) -> pd.DataFrame:
         """
         Load CSV lookup table as pandas DataFrame with utf-8-sig encoding per Master Rule 4.
+        Supports both standard uniform CSVs and ragged multi-header / banner / footnote CSVs.
         Caches DataFrame in memory for subsequent zero-overhead access.
         """
         file_path = self.get_file_path(identifier)
@@ -129,12 +154,44 @@ class KnowledgeBaseService:
             return self._table_cache[cache_key].copy()
 
         try:
-            # Per Rule 4: strictly utf-8-sig
-            df = pd.read_csv(file_path, encoding="utf-8-sig")
+            raw_rows = self.get_table_raw_rows(identifier)
+            if not raw_rows:
+                df = pd.DataFrame()
+                self._table_cache[cache_key] = df
+                return df.copy()
+
+            max_cols = max(len(r) for r in raw_rows)
+            row_lens = {len(r) for r in raw_rows}
+
+            # Use fast pd.read_csv only when header width matches max_cols and > 1
+            if len(row_lens) == 1 and max_cols > 1:
+                df = pd.read_csv(file_path, encoding="utf-8-sig")
+            elif len(raw_rows[0]) == max_cols and max_cols > 1:
+                try:
+                    df = pd.read_csv(file_path, encoding="utf-8-sig")
+                    if len(df.columns) != max_cols:
+                        raise ValueError("Column count mismatch")
+                except Exception:
+                    df = self._parse_ragged_csv_to_dataframe(raw_rows, max_cols)
+            else:
+                df = self._parse_ragged_csv_to_dataframe(raw_rows, max_cols)
+
             self._table_cache[cache_key] = df
             return df.copy()
+        except ReferenceIntegrityError:
+            raise
         except Exception as e:
             raise ReferenceIntegrityError(f"Failed to read CSV table '{file_path}': {e}") from e
+
+    def _parse_ragged_csv_to_dataframe(self, raw_rows: List[List[str]], max_cols: int) -> pd.DataFrame:
+        """Parse ragged multi-header/banner/footnote CSV rows into a uniform DataFrame."""
+        header_idx = next((i for i, r in enumerate(raw_rows) if len(r) == max_cols), 0)
+        headers = self._make_unique_headers(raw_rows[header_idx], max_cols)
+        data_rows: List[List[str]] = []
+        for r in raw_rows[header_idx + 1 :]:
+            padded = [str(c) for c in r] + [""] * max(0, max_cols - len(r))
+            data_rows.append(padded[:max_cols])
+        return pd.DataFrame(data_rows, columns=headers)
 
     def get_table_as_dicts(self, identifier: str) -> List[Dict[str, Any]]:
         """Return CSV table as list of row dictionaries."""
